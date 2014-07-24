@@ -121,9 +121,9 @@ Data_PreAnalyse$lastAckTime        <-as.numeric(Data_PreAnalyse$lastAckTime)
 
 ##draw in 3d
 # attach(Data_PreAnalyse)
-# plot3d(upAvBand,downAvBand,UpCorrecteRate,xlab="upAvBand",ylab="downAvBand",zlab="FirstRespondTime")
-# plot3d(upAvBand,downAvBand,DownCorrecteRate,xlab="upAvBand",ylab="downAvBand",zlab="LastPacketTime")
-# plot3d(upAvBand,downAvBand,DownCorrecteRate,xlab="upAvBand",ylab="downAvBand",zlab="LastAckTime")
+# plot3d(upAvBand,downAvBand,firstRespondTime,xlab="upAvBand",ylab="downAvBand",zlab="FirstRespondTime")
+# plot3d(upAvBand,downAvBand,lastPacketTime,xlab="upAvBand",ylab="downAvBand",zlab="LastPacketTime")
+# plot3d(upAvBand,downAvBand,lastAckTime,xlab="upAvBand",ylab="downAvBand",zlab="LastAckTime")
 # plot3d(FirstRespondTime,LastPacketTime,LastAckTime,xlab="HttpFirstRespondTime(MS)",ylab="HttpLastPacketTime(MS)",zlab="HttpLastAckTime(MS)")
 
 Data_PreAnalyseScaled<-data.frame(scale(Data_PreAnalyse))
@@ -193,21 +193,23 @@ system.time(CalculeSC(Data_PreAnalyseScaled))
 # 绘制结果
 plot(resultSC, type="o", xlab="Number of Cluster", ylab="Silhouette Coefficient")
 
-# K=5时值最大，所以聚类效果最佳。
+# K=4时值最大，所以聚类效果最佳。
 
 rm(resultSC)
 
 ###########聚类############
 #bcl<-bootFlexclust(newDat, k=2:15, nboot=50, FUN=cclust, multicore=FALSE)
 #######K-means############3
-pkm<-kmeans(Data_PreAnalyseScaled,5,nstart=25,iter.max=10,algorithm="Hartigan-Wong")
+pkm<-kmeans(Data_PreAnalyseScaled,4,nstart=25,iter.max=10,algorithm="Hartigan-Wong")
+attach(Data_PreAnalyseScaled)
+plot3d(upAvBand,downAvBand,firstRespondTime,size=1)
 plot(x=Data_PreAnalyseScaled[,2],y=Data_PreAnalyseScaled[,3],col=pkm$cluster,xlim=c(-5,10),ylim=c(-2,10),main="聚5类图",xlab="",ylab="") #,xlim=c(-5,0.5),ylim=c(-5,5)
 plot(Data_PreAnalyseScaled,col=pkm$cluster)#,xlab="",ylab="",xlim=c(-5,2),ylim=c(-3,6))
 
 ###############CLARA (Clustering for Large Applications) algorithm###################
 # It works by clustering a sample from the dataset and then assigns all objects in the dataset to these clusters.
 #需要使用cluster包
-kmC<-clara(Data_PreAnalyseScaled,5)
+kmC<-clara(Data_PreAnalyseScaled,4)
 kmC$clusinfo
 
 # Delerror<-(data.DisHttp$EndTime!='')
