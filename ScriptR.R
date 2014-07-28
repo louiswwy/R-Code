@@ -1,4 +1,5 @@
-###########run only once
+###########安装包############
+# run only once
 # install.packages("ggplot2")
 # install.packages("knitr")
 # install.packages("data.table")
@@ -6,82 +7,87 @@
 # install.packages("plotrix")
 # install.packages("pvclust")
 # install.packages("cluster")
-# install.packages("FactoMineR")
 # install.packages("fpc")
 # install.packages("scatterplot3d")
+# install.packages("rgl")
 
-
-########ggplot#####################
+######载入包##########
+########ggplot
 library("ggplot2")
-########SVM包##################
+########SVM包
 #library("kernlab")
-###########贝叶斯包#########
+###########贝叶斯包
 #library("bnlearn")
-########Stringr包#############
+########Stringr包
 library("stringr")
-#########knitr包##############
+#########knitr包
 library("knitr")
-#########data.table包##########
+#########data.table包
 library("data.table")
-
 library("gpairs")
-
 library("plotrix")
-#######常用聚类算法#########
+#######常用聚类算法
 library("pvclust")
 library("cluster")
-########PCA包###################
-#做PCA可以使用FactoMineR包中的PCA()。和自带的prcomp(),princomp()
-library("FactoMineR")
-# ########fpc包#################
+# ########fpc包
 # #fpc包中的pamk()
 # library("fpc")
-
 library("rgl")
 library("scatterplot3d")
-##############HTTP#######################
+
+##############导入HTTP数据#######################
 data_DisHttp<-read.table("201406191100-ltehttpwap-sig13-11675500972.DAT"
                          ,header=TRUE,sep="|",fill=TRUE,colClasses="character",quote="",comment.char="")
 
-######删除格式错误数据########
+#######数据清理############
+######删除格式错误数据
 Delerror<-(data_DisHttp$EndTime!='')
 data_HTTP<-data_DisHttp[Delerror,]
 rm(Delerror)
 
-L4<-(data_HTTP$L4=='0')
-data.tcp<-data_HTTP[L4,]
-rm(L4)
-# nrow(data_HTTP)
-# nrow(data_HTTP)
-cat("no UDP:",nrow(data_HTTP)-nrow(data_HTTP))
-
-cat("业务最早开始于：",min(as.numeric(data_HTTP$BeginTime)))
-cat("业务最晚开始与：",max(as.numeric(data_HTTP$BeginTime)))
-cat("业务最早结束于：",min(as.numeric(data_HTTP$EndTime)))
-cat("业务最晚结束于:",max(as.numeric(data_HTTP$EndTime)))
-
-cat("第一条开始时间和最后一条开始时间：",max(as.numeric(data_HTTP$BeginTime))-min(as.numeric(data_HTTP$BeginTime)),"ms")
-cat("第一条结束时间和最后一条结束时间：",max(as.numeric(data_HTTP$EndTime))-min(as.numeric(data_HTTP$EndTime)),"ms")
-
-cat("第一条开始时间和最后一条结束时间：",max(as.numeric(data_HTTP$EndTime))-min(as.numeric(data_HTTP$BeginTime)),"ms")
-#######流程时间#########
-ProcedureTime<-(as.numeric(data_HTTP$StopT) - as.numeric(data_HTTP$StartT))
-data_HTTP<-data.frame(data_HTTP,ProcedureTime)
-rm(ProcedureTime)
-
-#max(as.numeric(data_HTTP1$UpTime))
-
-#########删除流程持续时间为0,上行在线时长/下行在线时长为0的项##########
-HttpTime<-((data_HTTP$ProcedureTime!=0)&(data_HTTP$UpTime!='0')&(data_HTTP$DownTime!='0'))
+#########删除流程持续时间为0,上行在线时长/下行在线时长为0的项
+HttpTime<-((data_HTTP$UpTime!='0')&(data_HTTP$DownTime!='0'))  #(data_HTTP$ProcedureTime!=0)&
 data_HTTP<-data_HTTP[HttpTime,]
 rm(HttpTime)
 
-#######上行平均带宽#####
+########数据信息##########
+#L4协议中‘0’表示TCP协议数据，‘1’表示UDP协议数据
+L4<-(data_HTTP$L4=='1')
+data_udp<-data_HTTP[L4,]
+cat("共有：",nrow(data_HTTP),"条数据，其中udp数据包含：",nrow(data_udp),"条。")
+
+#Timestamp Conversion
+
+#数据记录时间
+cat("业务最早开始于：",as.character(min(as.POSIXlt(as.numeric(substr(data_HTTP$StartT,1,10)),"UTC", origin="1970-01-01"))),"")
+cat("业务最晚开始与：",as.character(max(as.POSIXlt(as.numeric(substr(data_HTTP$StartT,1,10)),"UTC", origin="1970-01-01"))),"")
+cat("业务最早结束于：",as.character(min(as.POSIXlt(as.numeric(substr(data_HTTP$StopT,1,10)),"UTC", origin="1970-01-01"))),"")
+cat("业务最晚结束于: ",as.character(max(as.POSIXlt(as.numeric(substr(data_HTTP$StopT,1,10)),"UTC", origin="1970-01-01"))),"")
+
+StartTimes <-as.POSIXlt(as.numeric(substr(data_HTTP$StartT,1,10)),"UTC", origin="1970-01-01")
+EndTimes   <-as.POSIXlt(as.numeric(substr(data_HTTP$StopT,1,10)),"UTC", origin="1970-01-01")
+Recodetime <-data.frame(StartTimes,EndTimes)
+
+StartMilliseconds <-as.numeric(substr(data_HTTP$StartT,11,13))/1000
+EndMilliseconds   <-as.numeric(substr(data_HTTP$StopT,11,13))/1000
+Millisecond       <-data.frame(StartMilliseconds,EndMilliseconds)
+
+RecodeTime        <-data.frame(Recodetime,Millisecond)
+attach(RecodeTime) #StartTimes  EndTimes	StartMilliseconds	EndMilliseconds
+cat("Data recoded in:",max(EndTimes)-min(StartTimes)," minits")
+
+#######流程时间#########
+# ProcedureTime<-(as.numeric(data_HTTP$StopT) - as.numeric(data_HTTP$StartT))
+# data_HTTP<-data.frame(data_HTTP,ProcedureTime)
+# rm(ProcedureTime)
+
+########数据提取##########
+#######上行平均带宽
 upAvBand<-as.numeric(data_HTTP$UpTraffic)/as.numeric(data_HTTP$UpTime)
 data_HTTP<-data.frame(data_HTTP,upAvBand)
 rm(upAvBand)
 
-#######下行平均带宽#####
+#######下行平均带宽
 downAvBand<-as.numeric(data_HTTP$DownTraffic)/as.numeric(data_HTTP$DownTime)
 data_HTTP<-data.frame(data_HTTP,downAvBand)
 rm(downAvBand)
@@ -96,21 +102,16 @@ rm(downAvBand)
 # data_HTTP<-data.frame(data_HTTP4,DownerrorRate)
 # rm(DownerrorRate)
 
-########FirstRespondTime、LastPacketTime、LastAckTime#####
-FirstRespondTime<-(as.numeric(data_HTTP$FirstRespondTime))
-data_HTTP<-data.frame(data_HTTP,FirstRespondTime)
+########FirstRespondTime、LastPacketTime、LastAckTime
+firstRespondTime<-(as.numeric(data_HTTP$FirstRespondTime))
+data_HTTP<-data.frame(data_HTTP,firstRespondTime)
 
-LastPacketTime<-(as.numeric(data_HTTP$LastPacketTime))
-data_HTTP<-data.frame(data_HTTP,LastPacketTime)
+lastPacketTime<-(as.numeric(data_HTTP$LastPacketTime))
+data_HTTP<-data.frame(data_HTTP,lastPacketTime)
 
-LastAckTime<-(as.numeric(data_HTTP$LastAckTime))
-data_HTTP<-data.frame(data_HTTP,LastAckTime)
-rm(FirstRespondTime,LastPacketTime,LastAckTime)
-
-names(data_HTTP)[names(data_HTTP)=="FirstRespondTime.1"]="firstRespondTime"
-names(data_HTTP)[names(data_HTTP)=="LastPacketTime"]="lastPacketTime"
-names(data_HTTP)[names(data_HTTP)=="LastAckTime"]="lastAckTime"
-
+lastAckTime<-(as.numeric(data_HTTP$LastAckTime))
+data_HTTP<-data.frame(data_HTTP,lastAckTime)
+rm(firstRespondTime,lastPacketTime,lastAckTime)
 
 ################聚类准备##################
 Data_PreAnalyse<-data_HTTP[c('upAvBand',  'downAvBand','firstRespondTime','lastPacketTime','lastAckTime')]  #,  'UperrorRate','DownerrorRate'
@@ -119,14 +120,14 @@ Data_PreAnalyse$firstRespondTime   <-as.numeric(Data_PreAnalyse$firstRespondTime
 Data_PreAnalyse$lastPacketTime     <-as.numeric(Data_PreAnalyse$lastPacketTime)
 Data_PreAnalyse$lastAckTime        <-as.numeric(Data_PreAnalyse$lastAckTime)
 
-##draw in 3d
+# ##draw in 3d
 # attach(Data_PreAnalyse)
 # plot3d(upAvBand,downAvBand,firstRespondTime,xlab="upAvBand",ylab="downAvBand",zlab="FirstRespondTime")
 # plot3d(upAvBand,downAvBand,lastPacketTime,xlab="upAvBand",ylab="downAvBand",zlab="LastPacketTime")
 # plot3d(upAvBand,downAvBand,lastAckTime,xlab="upAvBand",ylab="downAvBand",zlab="LastAckTime")
 # plot3d(FirstRespondTime,LastPacketTime,LastAckTime,xlab="HttpFirstRespondTime(MS)",ylab="HttpLastPacketTime(MS)",zlab="HttpLastAckTime(MS)")
 
-Data_PreAnalyseScaled<-data.frame(scale(Data_PreAnalyse))
+Data_Scaled<-data.frame(scale(Data_PreAnalyse))
 
 # attach(Data_PreAnalyse)
 # plot3d(upAvBand,downAvBand,FirstRespondTime,main="")
@@ -145,8 +146,8 @@ CalculeSSE<-function(data){
   count = 50
   end = begin + length - 1
   # 结果容器
-  resultSSE <<- c()
-  resultSSE[begin:end] <<- 0
+  resultSSE <- c()
+  resultSSE[begin:end] <- 0
   # 遍历计算kmeans的SSE
   for(i in begin:end) {  
     # 计算SSE  
@@ -156,11 +157,12 @@ CalculeSSE<-function(data){
       kcluster = kmeans(data, i)   
       tmp[j] = kcluster$tot.withinss  
     }  
-    resultSSE[i] <<- mean(tmp)
+    resultSSE[i] <- mean(tmp)
   }
+  return(resultSSE)
 }
 
-system.time(CalculeSSE(Data_PreAnalyseScaled))
+system.time(resultSSE<-CalculeSSE(Data_Scaled))
 # 绘制结果
 plot(resultSSE, type="o", xlab="Number of Cluster", ylab="Sum of Squer Error");
 rm(resultSSE)
@@ -174,8 +176,8 @@ CalculeSC<-function(data){
   count = 50
   end = begin + length - 1
   # 结果容器
-  resultSC <<- c()
-  resultSC[begin:end]<<- -1
+  resultSC <- c()
+  resultSC[begin:end]<- -1
   # 遍历计算kmeans的SSE
   for(i in begin:end) {  
     # Silhouette coefficient  
@@ -185,32 +187,84 @@ CalculeSC<-function(data){
       kcluster = clara(data, i)    
       tmp[j] = kcluster$silinfo$avg.width   #silinfo : a list with all silhouette information,   
     }  
-    resultSC[i]  <<- mean(tmp)
+    resultSC[i]  <- mean(tmp)
   }
+  return(resultSC)
 }
 
-system.time(CalculeSC(Data_PreAnalyseScaled))
+system.time(resultSC<-CalculeSC(Data_Scaled))
 # 绘制结果
 plot(resultSC, type="o", xlab="Number of Cluster", ylab="Silhouette Coefficient")
 
-# K=4时值最大，所以聚类效果最佳。
+# K=8时值最大，所以聚类效果最佳。
 
 rm(resultSC)
 
 ###########聚类############
 #bcl<-bootFlexclust(newDat, k=2:15, nboot=50, FUN=cclust, multicore=FALSE)
 #######K-means############3
-pkm<-kmeans(Data_PreAnalyseScaled,4,nstart=25,iter.max=10,algorithm="Hartigan-Wong")
-attach(Data_PreAnalyseScaled)
-plot3d(upAvBand,downAvBand,firstRespondTime,size=1)
-plot(x=Data_PreAnalyseScaled[,2],y=Data_PreAnalyseScaled[,3],col=pkm$cluster,xlim=c(-5,10),ylim=c(-2,10),main="聚5类图",xlab="",ylab="") #,xlim=c(-5,0.5),ylim=c(-5,5)
-plot(Data_PreAnalyseScaled,col=pkm$cluster)#,xlab="",ylab="",xlim=c(-5,2),ylim=c(-3,6))
+# pkm<-kmeans(Data_Scaled,8,nstart=25,iter.max=10,algorithm="Hartigan-Wong")
+# attach(Data_Scaled)
+# # plot3d(upAvBand,downAvBand,firstRespondTime,size=3,col=pkm$cluster)
+# plot(x=Data_PreAnalyseScaled[,2],y=Data_PreAnalyseScaled[,3],col=pkm$cluster,xlim=c(-5,10),ylim=c(-2,10),main="聚5类图",xlab="",ylab="") #,xlim=c(-5,0.5),ylim=c(-5,5)
+# plot(Data_PreAnalyseScaled,col=pkm$cluster)#,xlab="",ylab="",xlim=c(-5,2),ylim=c(-3,6))
 
 ###############CLARA (Clustering for Large Applications) algorithm###################
 # It works by clustering a sample from the dataset and then assigns all objects in the dataset to these clusters.
 #需要使用cluster包
-kmC<-clara(Data_PreAnalyseScaled,4)
+kmC<-clara(Data_Scaled,8)
 kmC$clusinfo
+attach(Data_PreAnalyse)
+plot3d(upAvBand,downAvBand,firstRespondTime,size=3,col=kmC$clustering,xlim=c(0,200),ylim=c(0,200),zlim=c(0,200))
+plot3d(firstRespondTime,lastPacketTime,lastAckTime,size=3,col=kmC$clustering)
+
+cluste2<-kmC$clustering==2
+data_cluste2<-data_HTTP[cluste2,] 
+attach(data_cluste2)
+plot3d(upAvBand,downAvBand,firstRespondTime,size=3,col=kmC$clustering)
+plot3d(firstRespondTime,lastPacketTime,lastAckTime,size=3,col=kmC$clustering)
+clust<-data.frame(kmC$clustering)
+data_cluster<-data.frame(data_HTTP,clust)
+
+# #for(Nc in 1: 8){
+#   
+#   
+# NumEnb=(table(as.numeric(TEST$eNBip))) # as.numeric(as.character
+# a <-ftable(NumEnb)
+# a
+# FreEnb<-data.frame(NumEnb)
+# FreEnb<-as.numeric(as.character(NumEnb))
+# # NumEnb<-factor(NumEnb)
+# # #levels(factor(NumEnb))
+# # FreEnb<-data.frame(NumEnb)
+# # cat("there are ",nrow(FreEnb),"eNb")
+# # a<-data.frame(factor(row.names(FreEnb)))
+# # a[2,1]
+# # enbIp<-levels(factor(FreEnb$Var1))
+# # FreEnb<-data.frame(FreEnb,enbIp)
+# 
+# test<-data_HTTP$eNBip==  3719419708
+# data_test<-data_HTTP[test,]
+# 
+# mmetest<-data_HTTP$MMEIP==  1682243169
+# data_testmme<-data_HTTP[mmetest,]
+# 
+# MaxRow<-FreEnb$Freq==max(FreEnb$Freq)
+# data_MaxRow<-FreEnb[MaxRow,]
+
+
+# 
+# a<-sort(FreEnb$Freq, decreasing = TRUE)  
+# a<-data.frame(a)
+# NumEnb
+# #}
+
+
+
+
+
+
+
 
 # Delerror<-(data.DisHttp$EndTime!='')
 # data_HTTP<-data.DisHttp[Delerror,]
