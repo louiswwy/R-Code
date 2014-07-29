@@ -13,29 +13,105 @@
 # install.packages(arules)
 
 ######载入包##########
-########ggplot
+#ggplot
 library("ggplot2")
-########SVM包
+#SVM包
 #library("kernlab")
-###########贝叶斯包
+#贝叶斯包
 #library("bnlearn")
-########Stringr包
+#Stringr包
 library("stringr")
-#########knitr包
+#knitr包
 library("knitr")
-#########data.table包
+#data.table包
 library("data.table")
 library("gpairs")
 library("plotrix")
-#######常用聚类算法
+#常用聚类算法
 library("pvclust")
 library("cluster")
-# ########fpc包
-# #fpc包中的pamk()
-# library("fpc")
+#3d绘图
 library("rgl")
 #关联规则
-library(arules)  #加载arules程序包
+library(Matrix)
+library(arules)
+
+#######Function##########
+
+itemCount<-function(item){
+  ItemCount<- data.frame(table(item))
+  ItemCount<- data.frame(lapply(ItemCount, as.character), stringsAsFactors=FALSE)
+  return(ItemCount)
+}
+
+mergedata<-function(data){
+  longData<-c()
+  for(l in 1:nrow(data)){  
+    long<-(data_HTTP$xDRID==data[l,1])
+    temp<-data_HTTP[long,]
+    longData<-rbind(longData,temp)
+  }
+  return(longData)
+}
+
+DeletRow<-function(item,seul){
+  newItem<-item[1,]
+  for(i in 1: nrow(item)){
+    Nfreq<-item$Freq[i]
+    if(Nfreq >= seul){
+      newItem<-rbind(newItem,item[i,])
+    }
+  }
+  newItem<-newItem[-1,]
+  return(newItem)
+}
+
+CalculeSC<-function(data){
+  begin = 2
+  length = 15
+  count = 50
+  end = begin + length - 1
+  # 结果容器
+  resultSC <- c()
+  resultSC[begin:end]<- -1
+  # 遍历计算kmeans的SSE
+  for(i in begin:end) {  
+    # Silhouette coefficient  
+    tmp = c()  
+    tmp[1:count] = 0  
+    for(j in 1:count) {    
+      kcluster = clara(data, i)    
+      tmp[j] = kcluster$silinfo$avg.width   #silinfo : a list with all silhouette information,   
+    }  
+    resultSC[i]  <- mean(tmp)
+  }
+  return(resultSC)
+}
+
+CalculeSSE<-function(data){
+  # K值的开始与结果边界
+  begin = 1
+  length = 15
+  #重复次数
+  count = 50
+  end = begin + length - 1
+  # 结果容器
+  resultSSE <- c()
+  resultSSE[begin:end] <- 0
+  # 遍历计算kmeans的SSE
+  for(i in begin:end) {  
+    # 计算SSE  
+    tmp = c()
+    tmp[1:count] = 0  
+    for(j in 1:count) {    
+      kcluster = kmeans(data, i)   
+      tmp[j] = kcluster$tot.withinss  
+    }  
+    resultSSE[i] <- mean(tmp)
+  }
+  return(resultSSE)
+}
+cat("")
 
 ##############导入HTTP数据#######################
 data_DisHttp<-read.table("201406191100-ltehttpwap-sig13-11675500972.DAT"
@@ -137,66 +213,16 @@ Data_Scaled<-data.frame(scale(Data_PreAnalyse))
 ###########K值选择#############
 #通过计算轮廓系数（silhouette coefficient）方法结合了凝聚度和分离度，可以以此来判断聚类的优良性。其值在-1到+1之间取值，值越大表示聚类效果越好。
 #########计算不同K值的SSE#####
-CalculeSSE<-function(data){
-  # K值的开始与结果边界
-  begin = 1
-  length = 15
-  #重复次数
-  count = 50
-  end = begin + length - 1
-  # 结果容器
-  resultSSE <- c()
-  resultSSE[begin:end] <- 0
-  # 遍历计算kmeans的SSE
-  for(i in begin:end) {  
-    # 计算SSE  
-    tmp = c()
-    tmp[1:count] = 0  
-    for(j in 1:count) {    
-      kcluster = kmeans(data, i)   
-      tmp[j] = kcluster$tot.withinss  
-    }  
-    resultSSE[i] <- mean(tmp)
-  }
-  return(resultSSE)
-}
-
 system.time(resultSSE<-CalculeSSE(Data_Scaled))
 # 绘制结果
 plot(resultSSE, type="o", xlab="Number of Cluster", ylab="Sum of Squer Error");
 rm(resultSSE)
 
 ###########计算Silhouette Coefficient#######
-
-
-CalculeSC<-function(data){
-  begin = 2
-  length = 15
-  count = 50
-  end = begin + length - 1
-  # 结果容器
-  resultSC <- c()
-  resultSC[begin:end]<- -1
-  # 遍历计算kmeans的SSE
-  for(i in begin:end) {  
-    # Silhouette coefficient  
-    tmp = c()  
-    tmp[1:count] = 0  
-    for(j in 1:count) {    
-      kcluster = clara(data, i)    
-      tmp[j] = kcluster$silinfo$avg.width   #silinfo : a list with all silhouette information,   
-    }  
-    resultSC[i]  <- mean(tmp)
-  }
-  return(resultSC)
-}
-
 system.time(resultSC<-CalculeSC(Data_Scaled))
 # 绘制结果
 plot(resultSC, type="o", xlab="Number of Cluster", ylab="Silhouette Coefficient")
-
 # K=8时值最大，所以聚类效果最佳。
-
 rm(resultSC)
 
 ###########聚类############
@@ -226,68 +252,38 @@ data_cluster<-data.frame(data_HTTP,clust)
 # plot3d(upAvBand,downAvBand,firstRespondTime,size=3,col='blue')
 # plot3d(firstRespondTime,lastPacketTime,lastAckTime,size=3,col=kmC$clustering)
 
-itemCount<-function(item){
-  ItemCount<-as.data.frame(table((item)))
-  Item<-as.numeric(as.character(ItemCount[,1]))
-  Freq<-as.numeric(as.character(ItemCount[,2]))
-  ItemFreq<-data.frame(Item,Freq)
-  return(ItemFreq)
-}
+###########long procedure############
+#merge data with same xdr id
+XdrCount<-itemCount(data_HTTP$xDRID)
+longxdr<-DeletRow(XdrCount,2)
+LongData<-mergedata(longxdr)
 
+###########analyse data###################
 eNbCount<-itemCount(data_cluster$eNBip)
 SGWCount<-itemCount(data_cluster$SGWIP)
 
-#merge data with same xdr id
-XdrCount<-data.frame(table(data_HTTP$xDRID))
-XdrCount <- data.frame(lapply(XdrCount, as.character), stringsAsFactors=FALSE)
-longxdr<-DeletRow(XdrCount,2)
+eNbCount$item<-as.numeric(eNbCount$item)
+eNbCount$Freq<-as.numeric(eNbCount$Freq)
+SGWCount$item<-as.numeric(SGWCount$item)
+SGWCount$Freq<-as.numeric(SGWCount$Freq)
 
-mergedata<-function(data){
-  longData<-c()
-  for(l in 1:nrow(data)){  
-    long<-(data_HTTP$xDRID==data[l,1])
-    temp<-data_HTTP[long,]
-    #temp<-data_HTTP[c("StartT","StopT","UpTraffic","DownTraffic","UpTime","DownTime","FirstRespondTime","LastPacketTime","LastAckTime")]
-    tapply()
-    longData<-rbind(longData,temp)
-  }
-  return(longData)
-}
-LongData<-mergedata(longxdr)
-
-sorteNB<-sort(eNbCount$Freq,decreasing=TRUE)
+sorteNB<-sort(as.numeric(eNbCount$Freq),decreasing=TRUE)
 sorteNB[1:20]
-sortSGW<-sort(SGWCount$Freq,decreasing=TRUE)
+sortSGW<-sort(as.numeric(SGWCount$Freq),decreasing=TRUE)
 sortSGW[1:30]
 
 cat("共连接",nrow(eNbCount),"个基站") 
+cat("共连接",nrow(SGWCount),"个SGW") 
 
-DeletRow<-function(item,seul){
-  newItem<-item[1,]
-  for(i in 1: nrow(item)){
-    Nfreq<-item$Freq[i]
-    if(Nfreq >= seul){
-      newItem<-rbind(newItem,item[i,])
-    }
-  }
-  newItem<-newItem[-1,]
-  return(newItem)
-}
-
-NewEnb<-DeletRow(eNbCount,40)
+NewEnb<-DeletRow(eNbCount,100)
 NewSgw<-DeletRow(SGWCount,500)
 
 cat("常用的基站有：",nrow(NewEnb),"座")
-cat("常用的SGW有：",nrow(NewSgw),"个")
+cat("常用的SGW有 ：",nrow(NewSgw),"个")
 
 
-
-
-
-# frequnentSgwData<-(data_cluster$SGWIP %in% NewSgw$Item)
-# data_freSgw<-data_cluster[frequnentSgwData,]
-# Delerror<-(data.DisHttp$EndTime!='')
-# data_HTTP<-data.DisHttp[Delerror,]
+FrequnentSgw<-(NewSgw$Item %in% data_cluster$SGWIP)
+data_freSgw<-data_cluster[FrequnentSgw,]
 
 
 
