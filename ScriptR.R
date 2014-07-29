@@ -10,6 +10,7 @@
 # install.packages("fpc")
 # install.packages("scatterplot3d")
 # install.packages("rgl")
+# install.packages(arules)
 
 ######载入包##########
 ########ggplot
@@ -33,7 +34,8 @@ library("cluster")
 # #fpc包中的pamk()
 # library("fpc")
 library("rgl")
-library("scatterplot3d")
+#关联规则
+library(arules)  #加载arules程序包
 
 ##############导入HTTP数据#######################
 data_DisHttp<-read.table("201406191100-ltehttpwap-sig13-11675500972.DAT"
@@ -65,14 +67,11 @@ cat("业务最早结束于：",as.character(min(as.POSIXlt(as.numeric(substr(dat
 cat("业务最晚结束于: ",as.character(max(as.POSIXlt(as.numeric(substr(data_HTTP$StopT,1,10)),"UTC", origin="1970-01-01"))),"")
 
 StartTimes <-as.POSIXlt(as.numeric(substr(data_HTTP$StartT,1,10)),"UTC", origin="1970-01-01")
-EndTimes   <-as.POSIXlt(as.numeric(substr(data_HTTP$StopT,1,10)),"UTC", origin="1970-01-01")
-Recodetime <-data.frame(StartTimes,EndTimes)
-
 StartMilliseconds <-as.numeric(substr(data_HTTP$StartT,11,13))/1000
+EndTimes   <-as.POSIXlt(as.numeric(substr(data_HTTP$StopT,1,10)),"UTC", origin="1970-01-01")
 EndMilliseconds   <-as.numeric(substr(data_HTTP$StopT,11,13))/1000
-Millisecond       <-data.frame(StartMilliseconds,EndMilliseconds)
+RecodeTime <-data.frame(StartTimes,StartMilliseconds,EndTimes,EndMilliseconds)
 
-RecodeTime        <-data.frame(Recodetime,Millisecond)
 attach(RecodeTime) #StartTimes  EndTimes	StartMilliseconds	EndMilliseconds
 cat("Data recoded in:",max(EndTimes)-min(StartTimes)," minits")
 
@@ -218,56 +217,80 @@ attach(Data_PreAnalyse)
 plot3d(upAvBand,downAvBand,firstRespondTime,size=3,col=kmC$clustering,xlim=c(0,200),ylim=c(0,200),zlim=c(0,200))
 plot3d(firstRespondTime,lastPacketTime,lastAckTime,size=3,col=kmC$clustering)
 
-cluste2<-kmC$clustering==2
-data_cluste2<-data_HTTP[cluste2,] 
-attach(data_cluste2)
-plot3d(upAvBand,downAvBand,firstRespondTime,size=3,col=kmC$clustering)
-plot3d(firstRespondTime,lastPacketTime,lastAckTime,size=3,col=kmC$clustering)
 clust<-data.frame(kmC$clustering)
 data_cluster<-data.frame(data_HTTP,clust)
 
-# #for(Nc in 1: 8){
-#   
-#   
-# NumEnb=(table(as.numeric(TEST$eNBip))) # as.numeric(as.character
-# a <-ftable(NumEnb)
-# a
-# FreEnb<-data.frame(NumEnb)
-# FreEnb<-as.numeric(as.character(NumEnb))
-# # NumEnb<-factor(NumEnb)
-# # #levels(factor(NumEnb))
-# # FreEnb<-data.frame(NumEnb)
-# # cat("there are ",nrow(FreEnb),"eNb")
-# # a<-data.frame(factor(row.names(FreEnb)))
-# # a[2,1]
-# # enbIp<-levels(factor(FreEnb$Var1))
-# # FreEnb<-data.frame(FreEnb,enbIp)
-# 
-# test<-data_HTTP$eNBip==  3719419708
-# data_test<-data_HTTP[test,]
-# 
-# mmetest<-data_HTTP$MMEIP==  1682243169
-# data_testmme<-data_HTTP[mmetest,]
-# 
-# MaxRow<-FreEnb$Freq==max(FreEnb$Freq)
-# data_MaxRow<-FreEnb[MaxRow,]
+# cluste2<-kmC$clustering==2
+# data_cluste2<-data_cluster[cluste2,] 
+# attach(data_cluste2)
+# plot3d(upAvBand,downAvBand,firstRespondTime,size=3,col='blue')
+# plot3d(firstRespondTime,lastPacketTime,lastAckTime,size=3,col=kmC$clustering)
+
+itemCount<-function(item){
+  ItemCount<-as.data.frame(table((item)))
+  Item<-as.numeric(as.character(ItemCount[,1]))
+  Freq<-as.numeric(as.character(ItemCount[,2]))
+  ItemFreq<-data.frame(Item,Freq)
+  return(ItemFreq)
+}
+
+eNbCount<-itemCount(data_cluster$eNBip)
+SGWCount<-itemCount(data_cluster$SGWIP)
+
+#merge data with same xdr id
+XdrCount<-data.frame(table(data_HTTP$xDRID))
+XdrCount <- data.frame(lapply(XdrCount, as.character), stringsAsFactors=FALSE)
+longxdr<-DeletRow(XdrCount,2)
+
+mergedata<-function(data){
+  longData<-c()
+  for(l in 1:nrow(data)){  
+    long<-(data_HTTP$xDRID==data[l,1])
+    temp<-data_HTTP[long,]
+    #temp<-data_HTTP[c("StartT","StopT","UpTraffic","DownTraffic","UpTime","DownTime","FirstRespondTime","LastPacketTime","LastAckTime")]
+    tapply()
+    longData<-rbind(longData,temp)
+  }
+  return(longData)
+}
+LongData<-mergedata(longxdr)
+
+sorteNB<-sort(eNbCount$Freq,decreasing=TRUE)
+sorteNB[1:20]
+sortSGW<-sort(SGWCount$Freq,decreasing=TRUE)
+sortSGW[1:30]
+
+cat("共连接",nrow(eNbCount),"个基站") 
+
+DeletRow<-function(item,seul){
+  newItem<-item[1,]
+  for(i in 1: nrow(item)){
+    Nfreq<-item$Freq[i]
+    if(Nfreq >= seul){
+      newItem<-rbind(newItem,item[i,])
+    }
+  }
+  newItem<-newItem[-1,]
+  return(newItem)
+}
+
+NewEnb<-DeletRow(eNbCount,40)
+NewSgw<-DeletRow(SGWCount,500)
+
+cat("常用的基站有：",nrow(NewEnb),"座")
+cat("常用的SGW有：",nrow(NewSgw),"个")
 
 
-# 
-# a<-sort(FreEnb$Freq, decreasing = TRUE)  
-# a<-data.frame(a)
-# NumEnb
-# #}
 
 
 
-
-
-
-
-
+# frequnentSgwData<-(data_cluster$SGWIP %in% NewSgw$Item)
+# data_freSgw<-data_cluster[frequnentSgwData,]
 # Delerror<-(data.DisHttp$EndTime!='')
 # data_HTTP<-data.DisHttp[Delerror,]
+
+
+
 
 # plotClasterData<-function(data,Clusting,PcaData,num){
 #   for(i in 1:num){
