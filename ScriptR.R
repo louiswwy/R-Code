@@ -35,6 +35,7 @@ library("rgl")
 #关联规则
 library(Matrix)
 library(arules)
+library("stringr")
 
 #######Function##########
 
@@ -124,20 +125,22 @@ CalculeSSE<-function(data){
   return(resultSSE)
 }
 
-# drawPieChar<-function(){
-#   Values<-c(nrow(Clara1),nrow(Clara2),nrow(Clara3),nrow(Clara4),nrow(Clara5))
-#   Labels<-c("group1","group2","group3","group4","group5")
-#   percent_str <- paste(round(Values/sum(Values) * 100,1), "%", sep="")
-#   Values <- data.frame(Percentage <- round(Values/sum(Values) * 100,1), Type = Labels,percent=percent_str )
-#   names(Values)<-c("Percentage","Type","percent")
-#   
-#   pie <- ggplot(Values, aes(x = "" ,y = Percentage, fill = Labels)) +  geom_bar(stat="identity",width = 3) + labs(title = "各组中条数比较",x = "",y = "")
-#   pie = pie + coord_polar("y")
-#   pie = pie + xlab('') + ylab('') + labs(fill="Types")
-#   pie
-#   return(pie)
-# }
-cat("")
+piechat<-function(data,title){
+  data[,1]<-as.numeric(data[,1])
+  data[,2]<-as.numeric(data[,2])
+  lbls <- c()
+  num<-nrow(data)
+  sum<-as.numeric(apply(data, 2, sum)[2])
+  for(i in 1:num){    
+    string<-round((data[i,2]/sum)*100)
+    string<-str_c("类",i,"占",string,"%")
+    lbls<-c(lbls,string)
+  }  
+  title<-str_c("饼图: 当",title)
+  pie(data[,2], labels = lbls,col=rainbow(8), main=title)
+}  
+
+cat("----------我是分割线----------")
 
 ##############导入HTTP数据#######################
 data_DisHttp<-read.table("201406191100-ltehttpwap-sig13-11675500972.DAT"
@@ -240,15 +243,16 @@ Data_Scaled<-data.frame(scale(Data_PreAnalyse))
 #通过计算轮廓系数（silhouette coefficient）方法结合了凝聚度和分离度，可以以此来判断聚类的优良性。其值在-1到+1之间取值，值越大表示聚类效果越好。
 #########计算不同K值的SSE#####
 system.time(resultSSE<-CalculeSSE(Data_Scaled))
-# 绘制结果
-plot(resultSSE, type="o", xlab="Number of Cluster", ylab="Sum of Squer Error");
-rm(resultSSE)
 
 ###########计算Silhouette Coefficient#######
 system.time(resultSC<-CalculeSC(Data_Scaled))
+
 # 绘制结果
+plot(resultSSE, type="o", xlab="Number of Cluster", ylab="Sum of Squer Error")
+
 plot(resultSC, type="o", xlab="Number of Cluster", ylab="Silhouette Coefficient")
 # K=8时值最大，所以聚类效果最佳。
+rm(resultSSE)
 rm(resultSC)
 
 ###########聚类############
@@ -281,7 +285,7 @@ data_cluster<-data.frame(data_HTTP,clust)
 ###########long procedure############
 #merge data with same xdr id
 XdrCount<-itemCount(data_HTTP$xDRID)
-longxdr<-DeletRow(XdrCount,2)
+longxdr<-MoreFreqRow(XdrCount,2)
 LongData<-mergedata(longxdr)
 
 ###########analyse data###################
@@ -330,22 +334,20 @@ data_LessfreEnb<-data_cluster[NotFrequnentEnb,][c(77,78,79,80,81,82)]
 #统计
 summary(data_freEnb)
 summary(data_LessfreEnb)
-hist(data_freEnb$firstRespondTime)
-hist(data_LessfreEnb$firstRespondTime)
 
-density(data_freEnb$firstRespondTime)
+cat("从两部分数据的最大值和均值中可以看出基站连接UE的数量的多少与各项时延成正比，而与下行流量成反比。而与上行流量没有较大关系")
 
-hist(data_freEnb$kmC.clustering)
-hist(data_LessfreEnb$kmC.clustering)
+freCluste<-itemCount(data_freEnb$kmC.clustering)
+lessCluste<-itemCount(data_LessfreEnb$kmC.clustering)
 
-HistP<-ggplot(data=data_freEnb)
-binsize<-diff(range(data_freEnb$kmC.clustering))/15
-HistP<-HistP+geom_histogram(aes(x=kmC.clustering),binwidth =binsize, fill = "light green", colour = "red")
-HistP
-cat("可以看出基站连接UE的数量的多少与各项时延成正比，而与下行流量成反比。而与上行流量没有较大关系")
+oldpar1 <- par(no.readonly=FALSE)
+par(plt=c(0,1,0,0.9))
+par(mfrow=c(1,2))
+piechat(freCluste ,"大量UE连接时")
+piechat(lessCluste,"少量UE连接时")
+par(oldpar)
 
 
-drawPieChar
 # plotClasterData<-function(data,Clusting,PcaData,num){
 #   for(i in 1:num){
 #     cluste<-Clusting$clustering==num
