@@ -93,7 +93,7 @@ CalculeSC<-function(data){
     tmp = c()  
     tmp[1:count] = 0  
     for(j in 1:count) {    
-      kcluster = clara(data, i)    
+      kcluster = clara(data, i,metric = "euclidean")    
       tmp[j] = kcluster$silinfo$avg.width   #silinfo : a list with all silhouette information,   
     }  
     resultSC[i]  <- mean(tmp)
@@ -142,6 +142,8 @@ piechat<-function(data,title){
 
 cat("----------我是分割线----------")
 
+#画图原是设置
+oldpar <-par()
 ##############导入HTTP数据#######################
 data_DisHttp<-read.table("201406191100-ltehttpwap-sig13-11675500972.DAT"
                          ,header=TRUE,sep="|",fill=TRUE,colClasses="character",quote="",comment.char="")
@@ -269,6 +271,7 @@ rm(resultSC)
 #需要使用cluster包
 kmC<-clara(Data_Scaled,8)
 kmC$clusinfo
+
 attach(Data_PreAnalyse)
 plot3d(upAvBand,downAvBand,firstRespondTime,size=3,col=kmC$clustering,xlim=c(0,200),ylim=c(0,200),zlim=c(0,200))
 plot3d(firstRespondTime,lastPacketTime,lastAckTime,size=3,col=kmC$clustering)
@@ -330,7 +333,7 @@ cat("较不常用的SGW 有 ：",nrow(LessSgw),"个")
 
 NotFrequnentEnb<-(data_cluster$SGWIP %in% LessSgw$item)
 data_LessfreEnb<-data_cluster[NotFrequnentEnb,][c(77,78,79,80,81,82)]
-
+rm(SGWCount,sorteNB,sortSGW,MoreEnb,MoreSgw,FrequnentEnb,LessEnb,LessSgw,NotFrequnentEnb)
 #统计
 summary(data_freEnb)
 summary(data_LessfreEnb)
@@ -340,26 +343,69 @@ cat("从两部分数据的最大值和均值中可以看出基站连接UE的数�
 freCluste<-itemCount(data_freEnb$kmC.clustering)
 lessCluste<-itemCount(data_LessfreEnb$kmC.clustering)
 
-# oldpar <- par(no.readonly=TRUE)
-# #par(plt=c(0,1,0,0.9))
-# par(mfrow=c(1,2))
-# piechat(freCluste ,"大量UE连接时")
-# piechat(lessCluste,"少量UE连接时")
-# #par(oldpar)
-# par(plt=c(0,0.9,0,0.9))
-# par(fig=c(0.2,0.8,0.2,0.8),new=FALSE)
-#######test##########
-par(mfrow=c(1,1))
-Data_FreScale<-data.frame(scale(data_freEnb)[,-6])
-system.time(resultSSE<-CalculeSSE(Data_FreScale))
-plot(resultSSE, type="o", xlab="Number of Cluster", ylab="Sum of Squer Error")
 
-system.time(resultFSC<-CalculeSC(Data_FreScale))
-plot(resultFSC, type="o", xlab="Number of Cluster", ylab="Silhouette Coefficient")
-#####关联规则#####
+par(mfrow=c(1,2))#一行同时显示两个团
+piechat(freCluste ,"大量UE连接时")
+piechat(lessCluste,"少量UE连接时")
+par(oldpar)#还原设置
 
+#+RTS 
 
+# data_PreAR<-data_cluster[c(77,78,79,80,81,82)]
+# clu1<-(data_PreAR$kmC.clustering==1)
+# datacluste1<-data_PreAR[clu1,][,-6]     
+ 
+# clu2<-(data_PreAR$kmC.clustering==2)
+# datacluste2<-data_PreAR[clu2,][,-6]  
+# 
+# clu3<-(data_PreAR$kmC.clustering==3)
+# datacluste3<-data_PreAR[clu3,][,-6]  
+# 
+# clu4<-(data_PreAR$kmC.clustering==4)
+# datacluste4<-data_PreAR[clu4,][,-6]  
+# 
+# clu5<-(data_PreAR$kmC.clustering==5)
+# datacluste5<-data_PreAR[clu5,][,-6]  
+# 
+# clu6<-(data_PreAR$kmC.clustering==6)
+# datacluste6<-data_PreAR[clu6,][,-6]  
+# 
+# clu7<-(data_PreAR$kmC.clustering==7)
+# datacluste7<-data_PreAR[clu7,][,-6]  
+# 
+# clu8<-(data_PreAR$kmC.clustering==8)
+# datacluste8<-data_PreAR[clu8,][,-6]  
+# 
+# rm(clu1,clu2,clu3,clu4,clu5,clu6,clu7,clu8)
+# 
+# cat(nrow(datacluste1),"row\n")
+# summary(datacluste1)
+# 
+# cat(nrow(datacluste2),"row\n")
+# summary(datacluste2)
+# 
+# cat(nrow(datacluste3),"row\n")
+# summary(datacluste3)
+# 
+# cat(nrow(datacluste4),"row\n")
+# summary(datacluste4)
+# 
+# cat(nrow(datacluste5),"row\n")
+# summary(datacluste5)
+# 
+# cat(nrow(datacluste6),"row\n")
+# summary(datacluste6)
+# 
+# cat(nrow(datacluste7),"row\n")
+# summary(datacluste7)
+# 
+# cat(nrow(datacluste8),"row\n")
+# summary(datacluste8)
 
+####关联规则#####
+
+kmC$center
+kmC$data
 
 
 # plotClasterData<-function(data,Clusting,PcaData,num){
