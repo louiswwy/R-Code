@@ -340,12 +340,26 @@ cat("从两部分数据的最大值和均值中可以看出基站连接UE的数�
 freCluste<-itemCount(data_freEnb$kmC.clustering)
 lessCluste<-itemCount(data_LessfreEnb$kmC.clustering)
 
-oldpar1 <- par(no.readonly=FALSE)
-par(plt=c(0,1,0,0.9))
+oldpar <- par(no.readonly=TRUE)
+#par(plt=c(0,1,0,0.9))
 par(mfrow=c(1,2))
 piechat(freCluste ,"大量UE连接时")
 piechat(lessCluste,"少量UE连接时")
-par(oldpar)
+#par(oldpar)
+par(plt=c(0,0.9,0,0.9))
+par(fig=c(0.2,0.8,0.2,0.8),new=FALSE)
+#######test##########
+par(mfrow=c(1,1))
+Data_FreScale<-data.frame(scale(data_freEnb)[,-6])
+system.time(resultSSE<-CalculeSSE(Data_FreScale))
+plot(resultSSE, type="o", xlab="Number of Cluster", ylab="Sum of Squer Error")
+
+system.time(resultFSC<-CalculeSC(Data_FreScale))
+plot(resultFSC, type="o", xlab="Number of Cluster", ylab="Silhouette Coefficient")
+#####关联规则#####
+
+
+
 
 
 # plotClasterData<-function(data,Clusting,PcaData,num){
