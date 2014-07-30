@@ -54,11 +54,23 @@ mergedata<-function(data){
   return(longData)
 }
 
-DeletRow<-function(item,seul){
+MoreFreqRow<-function(item,seul){
   newItem<-item[1,]
   for(i in 1: nrow(item)){
     Nfreq<-item$Freq[i]
     if(Nfreq >= seul){
+      newItem<-rbind(newItem,item[i,])
+    }
+  }
+  newItem<-newItem[-1,]
+  return(newItem)
+}
+
+LessFreqRow<-function(item,seul){
+  newItem<-item[1,]
+  for(i in 1: nrow(item)){
+    Nfreq<-item$Freq[i]
+    if(Nfreq <= seul){
       newItem<-rbind(newItem,item[i,])
     }
   }
@@ -111,6 +123,20 @@ CalculeSSE<-function(data){
   }
   return(resultSSE)
 }
+
+# drawPieChar<-function(){
+#   Values<-c(nrow(Clara1),nrow(Clara2),nrow(Clara3),nrow(Clara4),nrow(Clara5))
+#   Labels<-c("group1","group2","group3","group4","group5")
+#   percent_str <- paste(round(Values/sum(Values) * 100,1), "%", sep="")
+#   Values <- data.frame(Percentage <- round(Values/sum(Values) * 100,1), Type = Labels,percent=percent_str )
+#   names(Values)<-c("Percentage","Type","percent")
+#   
+#   pie <- ggplot(Values, aes(x = "" ,y = Percentage, fill = Labels)) +  geom_bar(stat="identity",width = 3) + labs(title = "各组中条数比较",x = "",y = "")
+#   pie = pie + coord_polar("y")
+#   pie = pie + xlab('') + ylab('') + labs(fill="Types")
+#   pie
+#   return(pie)
+# }
 cat("")
 
 ##############导入HTTP数据#######################
@@ -189,7 +215,7 @@ data_HTTP<-data.frame(data_HTTP,lastAckTime)
 rm(firstRespondTime,lastPacketTime,lastAckTime)
 
 ################聚类准备##################
-Data_PreAnalyse<-data_HTTP[c('upAvBand',  'downAvBand','firstRespondTime','lastPacketTime','lastAckTime')]  #,  'UperrorRate','DownerrorRate'
+Data_PreAnalyse<-data_HTTP[c('upAvBand','downAvBand','firstRespondTime','lastPacketTime','lastAckTime')]  #,  'UperrorRate','DownerrorRate'
 
 Data_PreAnalyse$firstRespondTime   <-as.numeric(Data_PreAnalyse$firstRespondTime)
 Data_PreAnalyse$lastPacketTime     <-as.numeric(Data_PreAnalyse$lastPacketTime)
@@ -262,11 +288,15 @@ LongData<-mergedata(longxdr)
 eNbCount<-itemCount(data_cluster$eNBip)
 SGWCount<-itemCount(data_cluster$SGWIP)
 
+#属性数值化
 eNbCount$item<-as.numeric(eNbCount$item)
 eNbCount$Freq<-as.numeric(eNbCount$Freq)
+
 SGWCount$item<-as.numeric(SGWCount$item)
 SGWCount$Freq<-as.numeric(SGWCount$Freq)
 
+####统计####
+#前20个最频繁项
 sorteNB<-sort(as.numeric(eNbCount$Freq),decreasing=TRUE)
 sorteNB[1:20]
 sortSGW<-sort(as.numeric(SGWCount$Freq),decreasing=TRUE)
@@ -275,19 +305,47 @@ sortSGW[1:30]
 cat("共连接",nrow(eNbCount),"个基站") 
 cat("共连接",nrow(SGWCount),"个SGW") 
 
-NewEnb<-DeletRow(eNbCount,100)
-NewSgw<-DeletRow(SGWCount,500)
+####连接更多UE的基站####
+MoreEnb<-MoreFreqRow(eNbCount,100)
+MoreSgw<-MoreFreqRow(SGWCount,500)
 
-cat("常用的基站有：",nrow(NewEnb),"座")
-cat("常用的SGW有 ：",nrow(NewSgw),"个")
-
-
-FrequnentSgw<-(NewSgw$Item %in% data_cluster$SGWIP)
-data_freSgw<-data_cluster[FrequnentSgw,]
+cat("常用的基站有：",nrow(MoreEnb),"座")
+cat("常用的SGW有 ：",nrow(MoreSgw),"个")
 
 
+FrequnentEnb<-(data_cluster$eNBip %in% MoreEnb$item)
+data_freEnb<-data_cluster[FrequnentEnb,][c(77,78,79,80,81,82)]
+
+####连接较少UE的基站####
+LessEnb<-LessFreqRow(eNbCount,100)
+LessSgw<-LessFreqRow(SGWCount,500)
+
+cat("较不常用的基站有：",nrow(LessEnb),"座")
+cat("较不常用的SGW 有 ：",nrow(LessSgw),"个")
 
 
+NotFrequnentEnb<-(data_cluster$SGWIP %in% LessSgw$item)
+data_LessfreEnb<-data_cluster[NotFrequnentEnb,][c(77,78,79,80,81,82)]
+
+#统计
+summary(data_freEnb)
+summary(data_LessfreEnb)
+hist(data_freEnb$firstRespondTime)
+hist(data_LessfreEnb$firstRespondTime)
+
+density(data_freEnb$firstRespondTime)
+
+hist(data_freEnb$kmC.clustering)
+hist(data_LessfreEnb$kmC.clustering)
+
+HistP<-ggplot(data=data_freEnb)
+binsize<-diff(range(data_freEnb$kmC.clustering))/15
+HistP<-HistP+geom_histogram(aes(x=kmC.clustering),binwidth =binsize, fill = "light green", colour = "red")
+HistP
+cat("可以看出基站连接UE的数量的多少与各项时延成正比，而与下行流量成反比。而与上行流量没有较大关系")
+
+
+drawPieChar
 # plotClasterData<-function(data,Clusting,PcaData,num){
 #   for(i in 1:num){
 #     cluste<-Clusting$clustering==num
