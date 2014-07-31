@@ -397,8 +397,53 @@ summary(datacluste8)
 # 
 # ###关联规则#####
 # 
-# kmC$center
-# kmC$data
+#寻找区间
+qujian<-function(data,nk){  
+  TData<-c()
+  for(i in 1:nk){
+    CData<-c()
+    clu<-(data$kmC.clustering==i)
+    datacluste<-data[clu,][,-6]
+    for(n in 1:ncol(datacluste)){
+      minV<-min(datacluste[,n])
+      maxV<-max(datacluste[,n])
+      RData<-rbind(minV,maxV)   
+      CData<-cbind(CData,RData)
+    }
+    TData<-rbind(TData,CData)
+  }
+  rowname<-c("1","1","2","2","3","3","4","4","5","5","6","6","7","7","8","8")
+  TData<-cbind(TData,rowname)
+  return(TData)
+}
+
+
+Max_Min<-qujian(data_PreAR,8)
+#names(Max_Min)<-c("upAvBand","downAvBand","firstRespondTime","lastPacketTime","lastAckTime","Cluster")
+findSeuil<-function(Data){  
+  RowSeuil<-c()
+  #ColSeuil<-c()
+  for(x in 1:5){
+    ColSeuil<-c()
+    data<-sort(as.numeric(Data[,x]))
+    for(y in 1:15){
+      seuil<-abs((data[y]-data[y+1])/2)+data[y]
+      ColSeuil<-cbind(ColSeuil,seuil)
+    }
+    RowSeuil<-rbind(RowSeuil,ColSeuil)
+  }
+  return(RowSeuil)
+}
+
+Seuil<-findSeuil(Max_Min)
+
+#讲数值转换为区间
+
+
+
+
+
+#使用关联规则
 # 
 # 
 # # plotClasterData<-function(data,Clusting,PcaData,num){
