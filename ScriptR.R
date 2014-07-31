@@ -133,12 +133,12 @@ piechat<-function(data,title){
   sum<-as.numeric(apply(data, 2, sum)[2])
   for(i in 1:num){    
     string<-round((data[i,2]/sum)*100)
-    string<-str_c("类",i,"占",string,"%")
+    string<-str_c("(",i,")：",string,"%")
     lbls<-c(lbls,string)
   }  
-  title<-str_c("饼图: 当",title)
-  pie(data[,2], labels = lbls,col=rainbow(8), main=title)
+  pie(data[,2],col=rainbow(8), labels = lbls, main=title)
 }  
+
 
 cat("----------我是分割线----------")
 
@@ -240,22 +240,22 @@ Data_Scaled<-data.frame(scale(Data_PreAnalyse))
 # plot3d(upAvBand,downAvBand,LastPacketTime,main="")
 # plot3d(upAvBand,downAvBand,LastAckTime,main="")
 # plot3d(FirstRespondTime,LastPacketTime,LastAckTime,main="")
-
+# 
 ###########K值选择#############
 #通过计算轮廓系数（silhouette coefficient）方法结合了凝聚度和分离度，可以以此来判断聚类的优良性。其值在-1到+1之间取值，值越大表示聚类效果越好。
 #########计算不同K值的SSE#####
-system.time(resultSSE<-CalculeSSE(Data_Scaled))
-
-###########计算Silhouette Coefficient#######
-system.time(resultSC<-CalculeSC(Data_Scaled))
-
-# 绘制结果
-plot(resultSSE, type="o", xlab="Number of Cluster", ylab="Sum of Squer Error")
-
-plot(resultSC, type="o", xlab="Number of Cluster", ylab="Silhouette Coefficient")
-# K=8时值最大，所以聚类效果最佳。
-rm(resultSSE)
-rm(resultSC)
+# system.time(resultSSE<-CalculeSSE(Data_Scaled))
+# 
+# ###########计算Silhouette Coefficient#######
+# system.time(resultSC<-CalculeSC(Data_Scaled))
+# 
+# # 绘制结果
+# plot(resultSSE, type="o", xlab="Number of Cluster", ylab="Sum of Squer Error")
+# 
+# plot(resultSC, type="o", xlab="Number of Cluster", ylab="Silhouette Coefficient")
+# # K=8时值最大，所以聚类效果最佳。
+# rm(resultSSE)
+# rm(resultSC)
 
 ###########聚类############
 #bcl<-bootFlexclust(newDat, k=2:15, nboot=50, FUN=cclust, multicore=FALSE)
@@ -272,19 +272,19 @@ rm(resultSC)
 kmC<-clara(Data_Scaled,8)
 kmC$clusinfo
 
-attach(Data_PreAnalyse)
-plot3d(upAvBand,downAvBand,firstRespondTime,size=3,col=kmC$clustering,xlim=c(0,200),ylim=c(0,200),zlim=c(0,200))
-plot3d(firstRespondTime,lastPacketTime,lastAckTime,size=3,col=kmC$clustering)
+# # attach(Data_PreAnalyse)
+# # plot3d(upAvBand,downAvBand,firstRespondTime,size=3,col=kmC$clustering,xlim=c(0,200),ylim=c(0,200),zlim=c(0,200))
+# # plot3d(firstRespondTime,lastPacketTime,lastAckTime,size=3,col=kmC$clustering)
 
 clust<-data.frame(kmC$clustering)
 data_cluster<-data.frame(data_HTTP,clust)
 
-# cluste2<-kmC$clustering==2
-# data_cluste2<-data_cluster[cluste2,] 
-# attach(data_cluste2)
-# plot3d(upAvBand,downAvBand,firstRespondTime,size=3,col='blue')
-# plot3d(firstRespondTime,lastPacketTime,lastAckTime,size=3,col=kmC$clustering)
-
+# # cluste2<-kmC$clustering==2
+# # data_cluste2<-data_cluster[cluste2,] 
+# # attach(data_cluste2)
+# # plot3d(upAvBand,downAvBand,firstRespondTime,size=3,col='blue')
+# # plot3d(firstRespondTime,lastPacketTime,lastAckTime,size=3,col=kmC$clustering)
+# 
 ###########long procedure############
 #merge data with same xdr id
 XdrCount<-itemCount(data_HTTP$xDRID)
@@ -343,146 +343,139 @@ cat("从两部分数据的最大值和均值中可以看出基站连接UE的数�
 freCluste<-itemCount(data_freEnb$kmC.clustering)
 lessCluste<-itemCount(data_LessfreEnb$kmC.clustering)
 
-
+# 
 par(mfrow=c(1,2))#一行同时显示两个团
-piechat(freCluste ,"大量UE连接时")
-piechat(lessCluste,"少量UE连接时")
+piechat(freCluste ,"pie char: many UE connected")
+piechat(lessCluste,"pie char: less UE connected")
 par(oldpar)#还原设置
-
-#+RTS 
-
-# data_PreAR<-data_cluster[c(77,78,79,80,81,82)]
-# clu1<-(data_PreAR$kmC.clustering==1)
-# datacluste1<-data_PreAR[clu1,][,-6]     
+# 
+# #+RTS 
+# 
+data_PreAR<-data_cluster[c(77,78,79,80,81,82)]
+clu1<-(data_PreAR$kmC.clustering==1)
+datacluste1<-data_PreAR[clu1,][,-6]     
  
-# clu2<-(data_PreAR$kmC.clustering==2)
-# datacluste2<-data_PreAR[clu2,][,-6]  
-# 
-# clu3<-(data_PreAR$kmC.clustering==3)
-# datacluste3<-data_PreAR[clu3,][,-6]  
-# 
-# clu4<-(data_PreAR$kmC.clustering==4)
-# datacluste4<-data_PreAR[clu4,][,-6]  
-# 
-# clu5<-(data_PreAR$kmC.clustering==5)
-# datacluste5<-data_PreAR[clu5,][,-6]  
-# 
-# clu6<-(data_PreAR$kmC.clustering==6)
-# datacluste6<-data_PreAR[clu6,][,-6]  
-# 
-# clu7<-(data_PreAR$kmC.clustering==7)
-# datacluste7<-data_PreAR[clu7,][,-6]  
-# 
-# clu8<-(data_PreAR$kmC.clustering==8)
-# datacluste8<-data_PreAR[clu8,][,-6]  
-# 
-# rm(clu1,clu2,clu3,clu4,clu5,clu6,clu7,clu8)
-# 
-# cat(nrow(datacluste1),"row\n")
-# summary(datacluste1)
-# 
-# cat(nrow(datacluste2),"row\n")
-# summary(datacluste2)
-# 
-# cat(nrow(datacluste3),"row\n")
-# summary(datacluste3)
-# 
-# cat(nrow(datacluste4),"row\n")
-# summary(datacluste4)
-# 
-# cat(nrow(datacluste5),"row\n")
-# summary(datacluste5)
-# 
-# cat(nrow(datacluste6),"row\n")
-# summary(datacluste6)
-# 
-# cat(nrow(datacluste7),"row\n")
-# summary(datacluste7)
-# 
-# cat(nrow(datacluste8),"row\n")
-# summary(datacluste8)
+clu2<-(data_PreAR$kmC.clustering==2)
+datacluste2<-data_PreAR[clu2,][,-6]  
 
-####关联规则#####
+clu3<-(data_PreAR$kmC.clustering==3)
+datacluste3<-data_PreAR[clu3,][,-6]  
 
-kmC$center
-kmC$data
+clu4<-(data_PreAR$kmC.clustering==4)
+datacluste4<-data_PreAR[clu4,][,-6]  
 
+clu5<-(data_PreAR$kmC.clustering==5)
+datacluste5<-data_PreAR[clu5,][,-6]  
 
-# plotClasterData<-function(data,Clusting,PcaData,num){
-#   for(i in 1:num){
-#     cluste<-Clusting$clustering==num
-#     data.cluste<-PcaData[cluste,]    
-#   }
-# }
+clu6<-(data_PreAR$kmC.clustering==6)
+datacluste6<-data_PreAR[clu6,][,-6]  
 
-# analyseData<-function(data,Clusting,PcaData,num){
-#   #for(i in 1:num){
-#   cluste<-Clusting$clustering==num
-#   data_cluste<-PcaData[cluste,]    
-#   a<-data.frame(row.names(data_cluste))
-#   matchs<-row.names(data) %in% a[,1]
-#   data.matchs<-data[matchs,]
-#   return(data.matchs)
-#   #}   
-# }
+clu7<-(data_PreAR$kmC.clustering==7)
+datacluste7<-data_PreAR[clu7,][,-6]  
+
+clu8<-(data_PreAR$kmC.clustering==8)
+datacluste8<-data_PreAR[clu8,][,-6]  
+
+rm(clu1,clu2,clu3,clu4,clu5,clu6,clu7,clu8)
+
+cat(nrow(datacluste1),"row\n")
+summary(datacluste1)
 # 
-# Clara1<-analyseData(Data_PreAnalyseScaled,kmC,newDat,1)
-# Clara2<-analyseData(Data_PreAnalyseScaled,kmC,newDat,2)
-# Clara3<-analyseData(Data_PreAnalyseScaled,kmC,newDat,3)
-# Clara4<-analyseData(Data_PreAnalyseScaled,kmC,newDat,4)
-# Clara5<-analyseData(Data_PreAnalyseScaled,kmC,newDat,5)
+summary(datacluste2)
 # 
-# nrow(Clara1)
-# nrow(Clara2)
-# nrow(Clara3)
-# nrow(Clara4)
-# nrow(Clara5)
-
-# drawPieChar<-function(){
-#   Values<-c(nrow(Clara1),nrow(Clara2),nrow(Clara3),nrow(Clara4),nrow(Clara5))
-#   Labels<-c("group1","group2","group3","group4","group5")
-#   percent_str <- paste(round(Values/sum(Values) * 100,1), "%", sep="")
-#   Values <- data.frame(Percentage <- round(Values/sum(Values) * 100,1), Type = Labels,percent=percent_str )
-#   names(Values)<-c("Percentage","Type","percent")
-#   
-#   pie <- ggplot(Values, aes(x = "" ,y = Percentage, fill = Labels)) +  geom_bar(stat="identity",width = 3) + labs(title = "各组中条数比较",x = "",y = "")
-#   pie = pie + coord_polar("y")
-#   pie = pie + xlab('') + ylab('') + labs(fill="Types")
-#   pie
-#   return(pie)
-# }
+summary(datacluste3)
 # 
-# drawPieChar()
-
-# StastiqueClara<-function(data,Clusting,PcaData,num){
-#   data_mean<-c()
-#   MEAN<-c() 
-#   for(i in 1:num){
-#     cluste<-Clusting$clustering==i
-#     data_cluste<-PcaData[cluste,]    
-#     a<-data.frame(row.names(data_cluste))
-#     matchs<-row.names(data) %in% a[,1]
-#     data_matchs<-data[matchs,]    
-#     #cat(data_matchs[1,1])
-#     #
-#     for(b in 1:ncol(data_matchs)){
-#       ColMean<-mean(data_matchs[,b])
-#       data_mean<-cbind(data_mean,ColMean)
-#     } 
-#     #     writeLines("")
-#     #     cat("MEAN",MEAN)
-#     #     writeLines("")
-#     #     cat("data_mean",data_mean)
-#     MEAN<-rbind(MEAN,data_mean)
-#     data_mean<-c()
-#   }  
-#   return(MEAN)
-# }
+summary(datacluste4)
 # 
-# ClaraMean<-StastiqueClara(Data.AnA,kmC,newDat,5)
-# names(ClaraMean)<-c('upAvBand','downAvBand','UpCorrecteRate','DownCorrecteRate' ,'FirstRespondTime','LastPacketTime','LastAckTime')
-# plot(ClaraMean)#,col
-# #matrix
+summary(datacluste5)
+# 
+summary(datacluste6)
+# 
+summary(datacluste7)
+# 
+summary(datacluste8)
+# 
+# ###关联规则#####
+# 
+# kmC$center
+# kmC$data
 # 
 # 
-# print(kmC)
+# # plotClasterData<-function(data,Clusting,PcaData,num){
+# #   for(i in 1:num){
+# #     cluste<-Clusting$clustering==num
+# #     data.cluste<-PcaData[cluste,]    
+# #   }
+# # }
+# 
+# # analyseData<-function(data,Clusting,PcaData,num){
+# #   #for(i in 1:num){
+# #   cluste<-Clusting$clustering==num
+# #   data_cluste<-PcaData[cluste,]    
+# #   a<-data.frame(row.names(data_cluste))
+# #   matchs<-row.names(data) %in% a[,1]
+# #   data.matchs<-data[matchs,]
+# #   return(data.matchs)
+# #   #}   
+# # }
+# # 
+# # Clara1<-analyseData(Data_PreAnalyseScaled,kmC,newDat,1)
+# # Clara2<-analyseData(Data_PreAnalyseScaled,kmC,newDat,2)
+# # Clara3<-analyseData(Data_PreAnalyseScaled,kmC,newDat,3)
+# # Clara4<-analyseData(Data_PreAnalyseScaled,kmC,newDat,4)
+# # Clara5<-analyseData(Data_PreAnalyseScaled,kmC,newDat,5)
+# # 
+# # nrow(Clara1)
+# # nrow(Clara2)
+# # nrow(Clara3)
+# # nrow(Clara4)
+# # nrow(Clara5)
+# 
+# # drawPieChar<-function(){
+# #   Values<-c(nrow(Clara1),nrow(Clara2),nrow(Clara3),nrow(Clara4),nrow(Clara5))
+# #   Labels<-c("group1","group2","group3","group4","group5")
+# #   percent_str <- paste(round(Values/sum(Values) * 100,1), "%", sep="")
+# #   Values <- data.frame(Percentage <- round(Values/sum(Values) * 100,1), Type = Labels,percent=percent_str )
+# #   names(Values)<-c("Percentage","Type","percent")
+# #   
+# #   pie <- ggplot(Values, aes(x = "" ,y = Percentage, fill = Labels)) +  geom_bar(stat="identity",width = 3) + labs(title = "各组中条数比较",x = "",y = "")
+# #   pie = pie + coord_polar("y")
+# #   pie = pie + xlab('') + ylab('') + labs(fill="Types")
+# #   pie
+# #   return(pie)
+# # }
+# # 
+# # drawPieChar()
+# 
+# # StastiqueClara<-function(data,Clusting,PcaData,num){
+# #   data_mean<-c()
+# #   MEAN<-c() 
+# #   for(i in 1:num){
+# #     cluste<-Clusting$clustering==i
+# #     data_cluste<-PcaData[cluste,]    
+# #     a<-data.frame(row.names(data_cluste))
+# #     matchs<-row.names(data) %in% a[,1]
+# #     data_matchs<-data[matchs,]    
+# #     #cat(data_matchs[1,1])
+# #     #
+# #     for(b in 1:ncol(data_matchs)){
+# #       ColMean<-mean(data_matchs[,b])
+# #       data_mean<-cbind(data_mean,ColMean)
+# #     } 
+# #     #     writeLines("")
+# #     #     cat("MEAN",MEAN)
+# #     #     writeLines("")
+# #     #     cat("data_mean",data_mean)
+# #     MEAN<-rbind(MEAN,data_mean)
+# #     data_mean<-c()
+# #   }  
+# #   return(MEAN)
+# # }
+# # 
+# # ClaraMean<-StastiqueClara(Data.AnA,kmC,newDat,5)
+# # names(ClaraMean)<-c('upAvBand','downAvBand','UpCorrecteRate','DownCorrecteRate' ,'FirstRespondTime','LastPacketTime','LastAckTime')
+# # plot(ClaraMean)#,col
+# # #matrix
+# # 
+# # 
+# # print(kmC)
