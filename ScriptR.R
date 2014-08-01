@@ -420,6 +420,7 @@ qujian<-function(data,nk){
 
 Max_Min<-qujian(data_PreAR,8)
 #names(Max_Min)<-c("upAvBand","downAvBand","firstRespondTime","lastPacketTime","lastAckTime","Cluster")
+
 findSeuil<-function(Data){  
   RowSeuil<-c()
   #ColSeuil<-c()
@@ -428,20 +429,71 @@ findSeuil<-function(Data){
     data<-sort(as.numeric(Data[,x]))
     for(y in 1:15){
       seuil<-abs((data[y]-data[y+1])/2)+data[y]
-      ColSeuil<-cbind(ColSeuil,seuil)
+      ColSeuil<-rbind(ColSeuil,seuil)
     }
-    RowSeuil<-rbind(RowSeuil,ColSeuil)
+    RowSeuil<-cbind(RowSeuil,ColSeuil)
   }
   return(RowSeuil)
 }
 
 Seuil<-findSeuil(Max_Min)
 
+arrangeValue<-function(data){
+  for(x in 1:ncol(data)){
+    maxX<-0
+    maxY<-0
+    for(y in 1:nrow(data)){
+      if(data[y,x]==0){
+        maxX<-x
+        maxY<-y
+      }
+    }
+    temY<-maxY+1
+    tmaxY<-nrow(data)-maxY
+    for(z in 1:nrow(data)){      
+      if((maxY+z)<=nrow(data)){
+        data[z,x]<-data[(maxY+z),x]
+      }
+      if((maxY+z)>nrow(data)){
+        data[z,x]<-0
+      }
+    }
+  }
+  return(data)
+}
+
+system.time(NewSeuil<-arrangeValue(Seuil))
+
+
 #讲数值转换为区间
+data_AR<-data_PreAR
 
+ToString<-function(data,seuil){  
+  for(x in 1:5){
+    for(y in 1:nrow(data)){ 
+      if(data[y,x]<=seuil[1,x])                                            {data[y,x]<-"1"}
+      if(data[y,x]>=seuil[1,x]  &&data[y,x]<=seuil[2,x]  &&seuil[2,x]!=0)  {data[y,x]<-"2"}
+      if(data[y,x]>=seuil[2,x]  &&data[y,x]<=seuil[3,x]  &&seuil[3,x]!=0)  {data[y,x]<-"3"}
+      if(data[y,x]>=seuil[3,x]  &&data[y,x]<=seuil[4,x]  &&seuil[4,x]!=0)  {data[y,x]<-"4"}
+      if(data[y,x]>=seuil[4,x]  &&data[y,x]<=seuil[5,x]  &&seuil[5,x]!=0)  {data[y,x]<-"5"}
+      if(data[y,x]>=seuil[5,x]  &&data[y,x]<=seuil[6,x]  &&seuil[6,x]!=0)  {data[y,x]<-"6"}
+      if(data[y,x]>=seuil[6,x]  &&data[y,x]<=seuil[7,x]  &&seuil[7,x]!=0)  {data[y,x]<-"7"}
+      if(data[y,x]>=seuil[7,x]  &&data[y,x]<=seuil[8,x]  &&seuil[8,x]!=0)  {data[y,x]<-"8"}
+      if(data[y,x]>=seuil[8,x]  &&data[y,x]<=seuil[9,x]  &&seuil[9,x]!=0)  {data[y,x]<-"9"}
+      if(data[y,x]>=seuil[9,x]  &&data[y,x]<=seuil[10,x] &&seuil[10,x]!=0) {data[y,x]<-"10"}
+      if(data[y,x]>=seuil[10,x] &&data[y,x]<=seuil[11,x] &&seuil[11,x]!=0) {data[y,x]<-"11"}
+      if(data[y,x]>=seuil[11,x] &&data[y,x]<=seuil[12,x] &&seuil[12,x]!=0) {data[y,x]<-"12"}
+      if(data[y,x]>=seuil[12,x] &&data[y,x]<=seuil[13,x] &&seuil[13,x]!=0) {data[y,x]<-"13"}
+      if(data[y,x]>=seuil[13,x] &&data[y,x]<=seuil[14,x] &&seuil[14,x]!=0) {data[y,x]<-"14"}
+      if(data[y,x]>=seuil[14,x] &&data[y,x]<=seuil[15,x] &&seuil[15,x]!=0) {data[y,x]<-"15"}
+      if(data[y,x]>=seuil[15,x] &&seuil[15,x]!=0)                          {data[y,x]<-"16"}
+      
+    }  
+  }
+  return(data)
+}  
 
-
-
+system.time(Data_AR<-ToString(data_PreAR,NewSeuil))
 
 #使用关联规则
 # 
