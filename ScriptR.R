@@ -11,6 +11,7 @@
 # install.packages("scatterplot3d")
 # install.packages("rgl")
 # install.packages(arules)
+# install.packages("RWeka")
 
 ######载入包##########
 #ggplot
@@ -35,8 +36,12 @@ library("rgl")
 #关联规则
 library(Matrix)
 library(arules)
+#字符串处理
 library("stringr")
 
+#Rweka
+library("rJava")
+library("RWeka")
 #######Function##########
 
 itemCount<-function(item){
@@ -144,6 +149,7 @@ cat("----------我是分割线----------")
 
 #画图原是设置
 oldpar <-par()
+
 ##############导入HTTP数据#######################
 data_DisHttp<-read.table("201406191100-ltehttpwap-sig13-11675500972.DAT"
                          ,header=TRUE,sep="|",fill=TRUE,colClasses="character",quote="",comment.char="")
@@ -471,22 +477,22 @@ data_AR<-data_PreAR
 ToString<-function(data,seuil){  
   for(x in 1:5){
     for(y in 1:nrow(data)){ 
-      if(data[y,x]<=seuil[1,x])                                            {data[y,x]<-"1"}
-      if(data[y,x]>=seuil[1,x]  &&data[y,x]<=seuil[2,x]  &&seuil[2,x]!=0)  {data[y,x]<-"2"}
-      if(data[y,x]>=seuil[2,x]  &&data[y,x]<=seuil[3,x]  &&seuil[3,x]!=0)  {data[y,x]<-"3"}
-      if(data[y,x]>=seuil[3,x]  &&data[y,x]<=seuil[4,x]  &&seuil[4,x]!=0)  {data[y,x]<-"4"}
-      if(data[y,x]>=seuil[4,x]  &&data[y,x]<=seuil[5,x]  &&seuil[5,x]!=0)  {data[y,x]<-"5"}
-      if(data[y,x]>=seuil[5,x]  &&data[y,x]<=seuil[6,x]  &&seuil[6,x]!=0)  {data[y,x]<-"6"}
-      if(data[y,x]>=seuil[6,x]  &&data[y,x]<=seuil[7,x]  &&seuil[7,x]!=0)  {data[y,x]<-"7"}
-      if(data[y,x]>=seuil[7,x]  &&data[y,x]<=seuil[8,x]  &&seuil[8,x]!=0)  {data[y,x]<-"8"}
-      if(data[y,x]>=seuil[8,x]  &&data[y,x]<=seuil[9,x]  &&seuil[9,x]!=0)  {data[y,x]<-"9"}
-      if(data[y,x]>=seuil[9,x]  &&data[y,x]<=seuil[10,x] &&seuil[10,x]!=0) {data[y,x]<-"10"}
-      if(data[y,x]>=seuil[10,x] &&data[y,x]<=seuil[11,x] &&seuil[11,x]!=0) {data[y,x]<-"11"}
-      if(data[y,x]>=seuil[11,x] &&data[y,x]<=seuil[12,x] &&seuil[12,x]!=0) {data[y,x]<-"12"}
-      if(data[y,x]>=seuil[12,x] &&data[y,x]<=seuil[13,x] &&seuil[13,x]!=0) {data[y,x]<-"13"}
-      if(data[y,x]>=seuil[13,x] &&data[y,x]<=seuil[14,x] &&seuil[14,x]!=0) {data[y,x]<-"14"}
-      if(data[y,x]>=seuil[14,x] &&data[y,x]<=seuil[15,x] &&seuil[15,x]!=0) {data[y,x]<-"15"}
-      if(data[y,x]>=seuil[15,x] &&seuil[15,x]!=0)                          {data[y,x]<-"16"}
+      if(data[y,x]<=seuil[1,x]) {data[y,x]<-'1'}
+      else if(data[y,x]>=seuil[1,x]  &&data[y,x]<=seuil[2,x]  &&seuil[2,x]!=0)  {data[y,x]<-'2'}
+      else if(data[y,x]>=seuil[2,x]  &&data[y,x]<=seuil[3,x]  &&seuil[3,x]!=0)  {data[y,x]<-'3'}
+      else if(data[y,x]>=seuil[3,x]  &&data[y,x]<=seuil[4,x]  &&seuil[4,x]!=0)  {data[y,x]<-'4'}
+      else if(data[y,x]>=seuil[4,x]  &&data[y,x]<=seuil[5,x]  &&seuil[5,x]!=0)  {data[y,x]<-'5'}
+      else if(data[y,x]>=seuil[5,x]  &&data[y,x]<=seuil[6,x]  &&seuil[6,x]!=0)  {data[y,x]<-'6'}
+      else if(data[y,x]>=seuil[6,x]  &&data[y,x]<=seuil[7,x]  &&seuil[7,x]!=0)  {data[y,x]<-'7'}
+      else if(data[y,x]>=seuil[7,x]  &&data[y,x]<=seuil[8,x]  &&seuil[8,x]!=0)  {data[y,x]<-'8'}
+      else if(data[y,x]>=seuil[8,x]  &&data[y,x]<=seuil[9,x]  &&seuil[9,x]!=0)  {data[y,x]<-'9'}
+      else if(data[y,x]>=seuil[9,x]  &&data[y,x]<=seuil[10,x] &&seuil[10,x]!=0) {data[y,x]<-'10'}
+      else if(data[y,x]>=seuil[10,x] &&data[y,x]<=seuil[11,x] &&seuil[11,x]!=0) {data[y,x]<-'11'}
+      else if(data[y,x]>=seuil[11,x] &&data[y,x]<=seuil[12,x] &&seuil[12,x]!=0) {data[y,x]<-'12'}
+      else if(data[y,x]>=seuil[12,x] &&data[y,x]<=seuil[13,x] &&seuil[13,x]!=0) {data[y,x]<-'13'}
+      else if(data[y,x]>=seuil[13,x] &&data[y,x]<=seuil[14,x] &&seuil[14,x]!=0) {data[y,x]<-'14'}
+      else if(data[y,x]>=seuil[14,x] &&data[y,x]<=seuil[15,x] &&seuil[15,x]!=0) {data[y,x]<-'15'}
+      else if(data[y,x]>=seuil[15,x] &&seuil[15,x]!=0) {data[y,x]<-'16'}
       
     }  
   }
@@ -495,7 +501,13 @@ ToString<-function(data,seuil){
 
 system.time(Data_AR<-ToString(data_PreAR,NewSeuil))
 
-#使用关联规则
+####使用关联规则####
+frequentsets=eclat((Data_AR[,1]),parameter=list(support=0.05,maxlen=10))  
+
+data(Groceries)
+
+is.numeric(Data_AR[,1])
+
 # 
 # 
 # # plotClasterData<-function(data,Clusting,PcaData,num){
