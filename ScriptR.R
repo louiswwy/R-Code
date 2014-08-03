@@ -11,8 +11,11 @@
 # install.packages("scatterplot3d")
 # install.packages("rgl")
 # install.packages(arules)
+# R-weka
 # install.packages("RWeka")
-
+# install.packages("RWekajars")
+# install.packages("bit")
+# install.packages("ff")
 ######载入包##########
 #ggplot
 library("ggplot2")
@@ -38,10 +41,14 @@ library(Matrix)
 library(arules)
 #字符串处理
 library("stringr")
-
+#ff
+library("bit")
+library("ff")
 #Rweka
 library("rJava")
 library("RWeka")
+library("RWekajars"
+
 #######Function##########
 
 itemCount<-function(item){
@@ -358,48 +365,17 @@ par(oldpar)#还原设置
 # #+RTS 
 # 
 data_PreAR<-data_cluster[c(77,78,79,80,81,82)]
-clu1<-(data_PreAR$kmC.clustering==1)
-datacluste1<-data_PreAR[clu1,][,-6]     
- 
-clu2<-(data_PreAR$kmC.clustering==2)
-datacluste2<-data_PreAR[clu2,][,-6]  
 
-clu3<-(data_PreAR$kmC.clustering==3)
-datacluste3<-data_PreAR[clu3,][,-6]  
+Data_PreAr<-split(data_PreAR[1:5],data_PreAR[,6])
+summary(data.frame(Data_PreAr[1]))
+summary(data.frame(Data_PreAr[2]))
+summary(data.frame(Data_PreAr[3]))
+summary(data.frame(Data_PreAr[4]))
+summary(data.frame(Data_PreAr[5]))
+summary(data.frame(Data_PreAr[6]))
+summary(data.frame(Data_PreAr[7]))
+summary(data.frame(Data_PreAr[8]))
 
-clu4<-(data_PreAR$kmC.clustering==4)
-datacluste4<-data_PreAR[clu4,][,-6]  
-
-clu5<-(data_PreAR$kmC.clustering==5)
-datacluste5<-data_PreAR[clu5,][,-6]  
-
-clu6<-(data_PreAR$kmC.clustering==6)
-datacluste6<-data_PreAR[clu6,][,-6]  
-
-clu7<-(data_PreAR$kmC.clustering==7)
-datacluste7<-data_PreAR[clu7,][,-6]  
-
-clu8<-(data_PreAR$kmC.clustering==8)
-datacluste8<-data_PreAR[clu8,][,-6]  
-
-rm(clu1,clu2,clu3,clu4,clu5,clu6,clu7,clu8)
-
-cat(nrow(datacluste1),"row\n")
-summary(datacluste1)
-# 
-summary(datacluste2)
-# 
-summary(datacluste3)
-# 
-summary(datacluste4)
-# 
-summary(datacluste5)
-# 
-summary(datacluste6)
-# 
-summary(datacluste7)
-# 
-summary(datacluste8)
 # 
 # ###关联规则#####
 # 
@@ -502,16 +478,18 @@ ToString<-function(data,seuil){
 system.time(Data_AR<-ToString(data_PreAR,NewSeuil))
 
 ####使用关联规则####
-frequentsets=eclat((Data_AR[,1]),parameter=list(support=0.05,maxlen=10))  
 
-data(Groceries)
+ff_data_ar<-ff(Data_AR[1:5])
+system.time(transaction_data <- as(split(Data_AR[1:5]), "transactions")) # original_data[,"id"], original_data[,"type"]
+system.time(frequentsets<-eclat(transaction_data,parameter=list(support=0.65,maxlen=10))  )
 
-is.numeric(Data_AR[,1])
+
+
 
 # 
 # 
 # # plotClasterData<-function(data,Clusting,PcaData,num){
-# #   for(i in 1:num){
+# #   for(i in 1:num){nn
 # #     cluste<-Clusting$clustering==num
 # #     data.cluste<-PcaData[cluste,]    
 # #   }
@@ -588,3 +566,9 @@ is.numeric(Data_AR[,1])
 # # 
 # # 
 # # print(kmC)
+
+#rweka
+# write.arff(Data_Scaled,"test.arff")
+
+
+
