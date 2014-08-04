@@ -16,6 +16,7 @@
 # install.packages("RWekajars")
 # install.packages("bit")
 # install.packages("ff")
+
 ######载入包##########
 #ggplot
 library("ggplot2")
@@ -194,7 +195,7 @@ RecodeTime <-data.frame(StartTimes,StartMilliseconds,EndTimes,EndMilliseconds)
 
 attach(RecodeTime) #StartTimes  EndTimes	StartMilliseconds	EndMilliseconds
 cat("Data recoded in:",max(EndTimes)-min(StartTimes)," minits")
-
+detach(RecodeTime)
 #######流程时间#########
 # ProcedureTime<-(as.numeric(data_HTTP$StopT) - as.numeric(data_HTTP$StartT))
 # data_HTTP<-data.frame(data_HTTP,ProcedureTime)
@@ -245,7 +246,7 @@ Data_PreAnalyse$lastAckTime        <-as.numeric(Data_PreAnalyse$lastAckTime)
 # plot3d(upAvBand,downAvBand,lastPacketTime,xlab="upAvBand",ylab="downAvBand",zlab="LastPacketTime")
 # plot3d(upAvBand,downAvBand,lastAckTime,xlab="upAvBand",ylab="downAvBand",zlab="LastAckTime")
 # plot3d(FirstRespondTime,LastPacketTime,LastAckTime,xlab="HttpFirstRespondTime(MS)",ylab="HttpLastPacketTime(MS)",zlab="HttpLastAckTime(MS)")
-
+# detach(Data_PreAnalyse)
 Data_Scaled<-data.frame(scale(Data_PreAnalyse))
 
 # attach(Data_PreAnalyse)
@@ -253,7 +254,7 @@ Data_Scaled<-data.frame(scale(Data_PreAnalyse))
 # plot3d(upAvBand,downAvBand,LastPacketTime,main="")
 # plot3d(upAvBand,downAvBand,LastAckTime,main="")
 # plot3d(FirstRespondTime,LastPacketTime,LastAckTime,main="")
-# 
+# detach(Data_PreAnalyse)
 ###########K值选择#############
 #通过计算轮廓系数（silhouette coefficient）方法结合了凝聚度和分离度，可以以此来判断聚类的优良性。其值在-1到+1之间取值，值越大表示聚类效果越好。
 #########计算不同K值的SSE#####
@@ -278,7 +279,7 @@ Data_Scaled<-data.frame(scale(Data_PreAnalyse))
 # # plot3d(upAvBand,downAvBand,firstRespondTime,size=3,col=pkm$cluster)
 # plot(x=Data_PreAnalyseScaled[,2],y=Data_PreAnalyseScaled[,3],col=pkm$cluster,xlim=c(-5,10),ylim=c(-2,10),main="聚5类图",xlab="",ylab="") #,xlim=c(-5,0.5),ylim=c(-5,5)
 # plot(Data_PreAnalyseScaled,col=pkm$cluster)#,xlab="",ylab="",xlim=c(-5,2),ylim=c(-3,6))
-
+# detach(Data_Scaled)
 ###############CLARA (Clustering for Large Applications) algorithm###################
 # It works by clustering a sample from the dataset and then assigns all objects in the dataset to these clusters.
 #需要使用cluster包
@@ -288,7 +289,7 @@ kmC$clusinfo
 # # attach(Data_PreAnalyse)
 # # plot3d(upAvBand,downAvBand,firstRespondTime,size=3,col=kmC$clustering,xlim=c(0,200),ylim=c(0,200),zlim=c(0,200))
 # # plot3d(firstRespondTime,lastPacketTime,lastAckTime,size=3,col=kmC$clustering)
-
+# # detach(Data_PreAnalyse)
 clust<-data.frame(kmC$clustering)
 data_cluster<-data.frame(data_HTTP,clust)
 
@@ -297,7 +298,7 @@ data_cluster<-data.frame(data_HTTP,clust)
 # # attach(data_cluste2)
 # # plot3d(upAvBand,downAvBand,firstRespondTime,size=3,col='blue')
 # # plot3d(firstRespondTime,lastPacketTime,lastAckTime,size=3,col=kmC$clustering)
-# 
+# # detach(data_cluste2)
 ###########long procedure############
 #merge data with same xdr id
 XdrCount<-itemCount(data_HTTP$xDRID)
@@ -365,16 +366,17 @@ par(oldpar)#还原设置
 # #+RTS 
 # 
 data_PreAR<-data_cluster[c(77,78,79,80,81,82)]
-
-Data_PreAr<-split(data_PreAR[1:5],data_PreAR[,6])
-summary(data.frame(Data_PreAr[1]))
-summary(data.frame(Data_PreAr[2]))
-summary(data.frame(Data_PreAr[3]))
-summary(data.frame(Data_PreAr[4]))
-summary(data.frame(Data_PreAr[5]))
-summary(data.frame(Data_PreAr[6]))
-summary(data.frame(Data_PreAr[7]))
-summary(data.frame(Data_PreAr[8]))
+#根据类划分数据。
+Data_ARule<-split(data_PreAR[1:5],data_PreAR[,6])
+#统计每个类的信息
+summary(data.frame(Data_ARule[1]))
+summary(data.frame(Data_ARule[2]))
+summary(data.frame(Data_ARule[3]))
+summary(data.frame(Data_ARule[4]))
+summary(data.frame(Data_ARule[5]))
+summary(data.frame(Data_ARule[6]))
+summary(data.frame(Data_ARule[7]))
+summary(data.frame(Data_ARule[8]))
 
 # 
 # ###关联规则#####
@@ -399,9 +401,25 @@ qujian<-function(data,nk){
   return(TData)
 }
 
+system.time(Max_Min<-qujian(data_PreAR,8))
+#优化版
+qujian2<-function(data,nc){  
+  TData<-c()
+  for(i in 1:nc){
+    CData<-c()
+    datacluste<-data.frame(data[i])
+    for(n in 1:ncol(datacluste)){
+      minV<-min(datacluste[,n])
+      maxV<-max(datacluste[,n])
+      RData<-rbind(minV,maxV)   
+      CData<-cbind(CData,RData)
+    }
+    TData<-rbind(TData,CData)    
+  }
+  return(TData)
+}
 
-Max_Min<-qujian(data_PreAR,8)
-#names(Max_Min)<-c("upAvBand","downAvBand","firstRespondTime","lastPacketTime","lastAckTime","Cluster")
+system.time(Max_Min<-qujian2(Data_ARule,8))
 
 findSeuil<-function(Data){  
   RowSeuil<-c()
@@ -418,7 +436,7 @@ findSeuil<-function(Data){
   return(RowSeuil)
 }
 
-Seuil<-findSeuil(Max_Min)
+system.time(Seuil<-findSeuil(Max_Min))
 
 arrangeValue<-function(data){
   for(x in 1:ncol(data)){
@@ -444,44 +462,115 @@ arrangeValue<-function(data){
   return(data)
 }
 
-system.time(NewSeuil<-arrangeValue(Seuil))
-
+system.time(Seuil<-arrangeValue(Seuil))
 
 #讲数值转换为区间
 data_AR<-data_PreAR
 
 ToString<-function(data,seuil){  
   for(x in 1:5){
-    for(y in 1:nrow(data)){ 
+    data[,x]<-as.numeric(data[,x])
+    for(y in 1:nrow(data)){  
+      
+#       cat(data[y,x],"\n")
       if(data[y,x]<=seuil[1,x]) {data[y,x]<-'1'}
-      else if(data[y,x]>=seuil[1,x]  &&data[y,x]<=seuil[2,x]  &&seuil[2,x]!=0)  {data[y,x]<-'2'}
-      else if(data[y,x]>=seuil[2,x]  &&data[y,x]<=seuil[3,x]  &&seuil[3,x]!=0)  {data[y,x]<-'3'}
-      else if(data[y,x]>=seuil[3,x]  &&data[y,x]<=seuil[4,x]  &&seuil[4,x]!=0)  {data[y,x]<-'4'}
-      else if(data[y,x]>=seuil[4,x]  &&data[y,x]<=seuil[5,x]  &&seuil[5,x]!=0)  {data[y,x]<-'5'}
-      else if(data[y,x]>=seuil[5,x]  &&data[y,x]<=seuil[6,x]  &&seuil[6,x]!=0)  {data[y,x]<-'6'}
-      else if(data[y,x]>=seuil[6,x]  &&data[y,x]<=seuil[7,x]  &&seuil[7,x]!=0)  {data[y,x]<-'7'}
-      else if(data[y,x]>=seuil[7,x]  &&data[y,x]<=seuil[8,x]  &&seuil[8,x]!=0)  {data[y,x]<-'8'}
-      else if(data[y,x]>=seuil[8,x]  &&data[y,x]<=seuil[9,x]  &&seuil[9,x]!=0)  {data[y,x]<-'9'}
-      else if(data[y,x]>=seuil[9,x]  &&data[y,x]<=seuil[10,x] &&seuil[10,x]!=0) {data[y,x]<-'10'}
-      else if(data[y,x]>=seuil[10,x] &&data[y,x]<=seuil[11,x] &&seuil[11,x]!=0) {data[y,x]<-'11'}
-      else if(data[y,x]>=seuil[11,x] &&data[y,x]<=seuil[12,x] &&seuil[12,x]!=0) {data[y,x]<-'12'}
-      else if(data[y,x]>=seuil[12,x] &&data[y,x]<=seuil[13,x] &&seuil[13,x]!=0) {data[y,x]<-'13'}
-      else if(data[y,x]>=seuil[13,x] &&data[y,x]<=seuil[14,x] &&seuil[14,x]!=0) {data[y,x]<-'14'}
-      else if(data[y,x]>=seuil[14,x] &&data[y,x]<=seuil[15,x] &&seuil[15,x]!=0) {data[y,x]<-'15'}
-      else if(data[y,x]>=seuil[15,x] &&seuil[15,x]!=0) {data[y,x]<-'16'}
+      else if((seuil[1,x]<data[y,x]  && data[y,x]<=seuil[2,x]  && seuil[2,x]!=0)||  (seuil[1,x] <=data[y,x]&&seuil[2,x]==0))  {data[y,x]<-'2'}
+      else if((seuil[2,x]<data[y,x]  && data[y,x]<=seuil[3,x]  && seuil[3,x]!=0)||  (seuil[2,x] <=data[y,x]&&seuil[3,x]==0))  {data[y,x]<-'3'}
+      else if((seuil[3,x]<data[y,x]  && data[y,x]<=seuil[4,x]  && seuil[4,x]!=0)||  (seuil[3,x] <=data[y,x]&&seuil[4,x]==0))  {data[y,x]<-'4'}
+      else if((seuil[4,x]<data[y,x]  && data[y,x]<=seuil[5,x]  && seuil[5,x]!=0)||  (seuil[4,x] <=data[y,x]&&seuil[5,x]==0))  {data[y,x]<-'5'}
+      else if((seuil[5,x]<data[y,x]  && data[y,x]<=seuil[6,x]  && seuil[6,x]!=0)||  (seuil[5,x] <=data[y,x]&&seuil[6,x]==0))  {data[y,x]<-'6'}
+      else if((seuil[6,x]<data[y,x]  && data[y,x]<=seuil[7,x]  && seuil[7,x]!=0)||  (seuil[6,x] <=data[y,x]&&seuil[7,x]==0))  {data[y,x]<-'7'}
+      else if((seuil[7,x]<data[y,x]  && data[y,x]<=seuil[8,x]  && seuil[8,x]!=0)||  (seuil[7,x] <=data[y,x]&&seuil[8,x]==0))  {data[y,x]<-'8'}
+      else if((seuil[8,x]<data[y,x]  && data[y,x]<=seuil[9,x]  && seuil[9,x]!=0)||  (seuil[8,x] <=data[y,x]&&seuil[9,x]==0))  {data[y,x]<-'9'}
+      else if((seuil[9,x]<data[y,x]  && data[y,x]<=seuil[10,x] && seuil[10,x]!=0)|| (seuil[9,x] <=data[y,x]&&seuil[10,x]==0)) {data[y,x]<-'10'}
+      else if((seuil[10,x]<data[y,x] && data[y,x]<=seuil[11,x] && seuil[11,x]!=0)|| (seuil[10,x]<=data[y,x]&&seuil[11,x]==0)) {data[y,x]<-'11'}
+      else if((seuil[11,x]<data[y,x] && data[y,x]<=seuil[12,x] && seuil[12,x]!=0)|| (seuil[11,x]<=data[y,x]&&seuil[12,x]==0)) {data[y,x]<-'12'}
+      else if((seuil[12,x]<data[y,x] && data[y,x]<=seuil[13,x] && seuil[13,x]!=0)|| (seuil[12,x]<=data[y,x]&&seuil[13,x]==0)) {data[y,x]<-'13'}
+      else if((seuil[13,x]<data[y,x] && data[y,x]<=seuil[14,x] && seuil[14,x]!=0)|| (seuil[13,x]<=data[y,x]&&seuil[14,x]==0)) {data[y,x]<-'14'}
+      else if((seuil[14,x]<data[y,x] && data[y,x]<=seuil[15,x] && seuil[15,x]!=0)|| (seuil[14,x]<=data[y,x]&&seuil[15,x]==0)) {data[y,x]<-'15'}
+      else if(seuil[15,x]<data[y,x] && seuil[15,x]!=0) {data[y,x]<-'16'}
       
     }  
   }
   return(data)
 }  
 
-system.time(Data_AR<-ToString(data_PreAR,NewSeuil))
+system.time(Data_AR<-ToString(data_PreAR,Seuil))
 
+ToStringNew<-function(data,seuil){  
+  ColData<-c()
+  for(x in 1:5){
+    Data<-as.numeric(data[,x])
+    for(y in 1:nrow(seuil)){  
+      rowData1<-Data<=Seuil[1,]
+      RowData1<-Data[rowData1]   
+      RowData1[]<-"1"
+      rowData2<-((seuil[1,]<=Data  && Data<=seuil[2,]  && seuil[2,]!=0)||(seuil[1,]<=Data&&seuil[2,]==0))
+      RowData2<-Data[rowData2] 
+      RowData2<-"2"
+      rowData3<-((seuil[2,]<=Data  && Data<=seuil[3,]  && seuil[3,]!=0)||(seuil[2,]<=Data&&seuil[3,]==0))
+      RowData3<-Data[rowData3] 
+      RowData3<-"3"
+      rowData4<-((seuil[3,]<=Data  && Data<=seuil[4,]  && seuil[4,]!=0)||(seuil[3,]<=Data&&seuil[4,]==0))
+      RowData4<-Data[rowData4] 
+      RowData4<-"4"
+      rowData5<-((seuil[4,]<=Data  && Data<=seuil[5,]  && seuil[5,]!=0)||(seuil[4,]<=Data&&seuil[5,]==0))
+      RowData5<-Data[rowData5] 
+      RowData5<-"5"
+      rowData6<-((seuil[5,]<=Data  && Data<=seuil[6,]  && seuil[6,]!=0)||(seuil[5,]<=Data&&seuil[6,]==0))
+      RowData6<-Data[rowData6] 
+      RowData6<-"6"
+      rowData7<-((seuil[6,]<=Data  && Data<=seuil[7,]  && seuil[7,]!=0)||(seuil[6,]<=Data&&seuil[7,]==0))
+      RowData7<-Data[rowData7] 
+      RowData7<-"7"
+      rowData8<-((seuil[7,]<=Data  && Data<=seuil[8,]  && seuil[8,]!=0)||(seuil[7,]<=Data&&seuil[8,]==0))
+      RowData8<-Data[rowData8] 
+      RowData8<-"8"
+      rowData9<-((seuil[8,]<=Data  && Data<=seuil[9,]  && seuil[9,]!=0)||(seuil[8,]<=Data&&seuil[9,]==0))
+      RowData9<-Data[rowData9] 
+      RowData9<-"9"
+      rowData10<-((seuil[9,]<=Data  && Data<=seuil[10,]  && seuil[10,]!=0)||(seuil[9,]<=Data&&seuil[10,]==0))
+      RowData10<-Data[rowData10] 
+      RowData10<-"10"
+      rowData11<-((seuil[10,]<=Data  && Data<=seuil[11,]  && seuil[11,]!=0)||(seuil[10,]<=Data&&seuil[11,]==0))
+      RowData11<-Data[rowData11] 
+      RowData11<-"11"
+      rowData12<-((seuil[11,]<=Data  && Data<=seuil[12,]  && seuil[12,]!=0)||(seuil[11,]<=Data&&seuil[12,]==0))
+      RowData12<-Data[rowData12] 
+      RowData12<-"12"
+      rowData13<-((seuil[12,]<=Data  && Data<=seuil[13,]  && seuil[13,]!=0)||(seuil[12,]<=Data&&seuil[13,]==0))
+      RowData13<-Data[rowData13] 
+      RowData13<-"13"
+      rowData14<-((seuil[13,]<=Data  && Data<=seuil[14,]  && seuil[14,]!=0)||(seuil[13,]<=Data&&seuil[14,]==0))
+      RowData14<-Data[rowData14] 
+      RowData14<-"14"
+      rowData15<-((seuil[14,]<=Data  && Data<=seuil[15,]  && seuil[15,]!=0)||(seuil[14,]<=Data&&seuil[15,]==0))
+      RowData15<-Data[rowData15] 
+      RowData15<-"15"
+      rowData16<-((seuil[15,]<=Data  && seuil[15,]!=0))
+      RowData16<-Data[rowData16] 
+      RowData16<-"16"
+      rowData<-rbind(RowData15,  RowData14,	RowData13,	RowData12,	RowData11
+                     ,	RowData10,	RowData9,	RowData8,	RowData7,	RowData6
+                     ,	RowData5,	RowData4,	RowData3,	RowData2,	RowData1)
+
+
+    }
+#     RowData<-c()
+#     nr<-row.names(rowData)
+#     RowData<-cbind(rowData,row.names(rowData))
+   #ColData<-merge(x=rowData,y=ColData,by="row.names(rowData)")
+  }
+  return(rowData)
+}  
+rm(Data_AR2)
+system.time(Data_AR2<-ToStringNew(data_PreAR,Seuil))
 ####使用关联规则####
 
-ff_data_ar<-ff(Data_AR[1:5])
-system.time(transaction_data <- as(split(Data_AR[1:5]), "transactions")) # original_data[,"id"], original_data[,"type"]
-system.time(frequentsets<-eclat(transaction_data,parameter=list(support=0.65,maxlen=10))  )
+str(Data_AR)
+system.time(transaction_data <- as(lapply(Data_AR[1:5], "[[", 1), "transactions"))
+system.time(transaction_data <- as(split(Data_AR[1:5],as.character(c(1:16))), "transactions")) # original_data[,"id"], original_data[,"type"]
+system.time(frequentsets<-eclat(transaction_data,parameter=list(support=0.05,maxlen=10))  )
 
 
 
