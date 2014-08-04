@@ -48,7 +48,7 @@ library("ff")
 #Rweka
 library("rJava")
 library("RWeka")
-library("RWekajars"
+library("RWekajars")
 
 #######Function##########
 
