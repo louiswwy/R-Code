@@ -46,9 +46,10 @@ library("stringr")
 library("bit")
 library("ff")
 #Rweka
-library("rJava")
-library("RWeka")
-library("RWekajars")
+# 需要先配置rjava环境
+# library("rJava")
+# library("RWeka")
+# library("RWekajars")
 
 #######Function##########
 
@@ -178,7 +179,7 @@ rm(HttpTime)
 L4<-(data_HTTP$L4=='1')
 data_udp<-data_HTTP[L4,]
 cat("共有：",nrow(data_HTTP),"条数据，其中udp数据包含：",nrow(data_udp),"条。")
-
+rm(L4,data_udp)
 #Timestamp Conversion
 
 #数据记录时间
@@ -247,8 +248,8 @@ Data_PreAnalyse$lastAckTime        <-as.numeric(Data_PreAnalyse$lastAckTime)
 # plot3d(upAvBand,downAvBand,lastAckTime,xlab="upAvBand",ylab="downAvBand",zlab="LastAckTime")
 # plot3d(FirstRespondTime,LastPacketTime,LastAckTime,xlab="HttpFirstRespondTime(MS)",ylab="HttpLastPacketTime(MS)",zlab="HttpLastAckTime(MS)")
 # detach(Data_PreAnalyse)
-Data_Scaled<-data.frame(scale(Data_PreAnalyse))
-
+# Data_Scaled<-data.frame(scale(Data_PreAnalyse))
+Data_Scaled<-Data_PreAnalyse
 # attach(Data_PreAnalyse)
 # plot3d(upAvBand,downAvBand,FirstRespondTime,main="")
 # plot3d(upAvBand,downAvBand,LastPacketTime,main="")
@@ -258,18 +259,18 @@ Data_Scaled<-data.frame(scale(Data_PreAnalyse))
 ###########K值选择#############
 #通过计算轮廓系数（silhouette coefficient）方法结合了凝聚度和分离度，可以以此来判断聚类的优良性。其值在-1到+1之间取值，值越大表示聚类效果越好。
 #########计算不同K值的SSE#####
-system.time(resultSSE<-CalculeSSE(Data_Scaled))
-
-###########计算Silhouette Coefficient#######
-system.time(resultSC<-CalculeSC(Data_Scaled))
-
-# 绘制结果
-plot(resultSSE, type="o", xlab="Number of Cluster", ylab="Sum of Squer Error")
-
-plot(resultSC, type="o", xlab="Number of Cluster", ylab="Silhouette Coefficient")
-# K=8时值最大，所以聚类效果最佳。
-rm(resultSSE)
-rm(resultSC)
+# system.time(resultSSE<-CalculeSSE(Data_Scaled))
+# 
+# ###########计算Silhouette Coefficient#######
+# system.time(resultSC<-CalculeSC(Data_Scaled))
+# 
+# # 绘制结果
+# plot(resultSSE, type="o", xlab="Number of Cluster", ylab="Sum of Squer Error")
+# 
+# plot(resultSC, type="o", xlab="Number of Cluster", ylab="Silhouette Coefficient")
+# # K=8时值最大，所以聚类效果最佳。
+# rm(resultSSE)
+# rm(resultSC)
 
 ###########聚类############
 #######K-means############
