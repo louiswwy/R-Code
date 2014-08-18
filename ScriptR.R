@@ -197,10 +197,6 @@ RecodeTime <-data.frame(StartTimes,StartMilliseconds,EndTimes,EndMilliseconds)
 attach(RecodeTime) #StartTimes  EndTimes	StartMilliseconds	EndMilliseconds
 cat("Data recoded in:",max(EndTimes)-min(StartTimes)," minits")
 detach(RecodeTime)
-#######流程时间#########
-# ProcedureTime<-(as.numeric(data_HTTP$StopT) - as.numeric(data_HTTP$StartT))
-# data_HTTP<-data.frame(data_HTTP,ProcedureTime)
-# rm(ProcedureTime)
 
 ########数据提取##########
 #######上行平均带宽
@@ -212,16 +208,6 @@ rm(upAvBand)
 downAvBand<-as.numeric(data_HTTP$DownTraffic)/as.numeric(data_HTTP$DownTime)
 data_HTTP<-data.frame(data_HTTP,downAvBand)
 rm(downAvBand)
-
-# #########上行误码率###############
-# UperrorRate<-(as.numeric(data_HTTP$UpRePac)/(as.numeric(data_HTTP$UpPac)+as.numeric(data_HTTP$UpRePac)))
-# data_HTTP<-data.frame(data_HTTP,UperrorRate)
-# rm(UperrorRate)
-# 
-# #########下行误码率###############
-# DownerrorRate<-(as.numeric(data_HTTP$DownRePac)/(as.numeric(data_HTTP$DownPac)+as.numeric(data_HTTP$DownRePac)))
-# data_HTTP<-data.frame(data_HTTP4,DownerrorRate)
-# rm(DownerrorRate)
 
 ########FirstRespondTime、LastPacketTime、LastAckTime
 firstRespondTime<-(as.numeric(data_HTTP$FirstRespondTime))
