@@ -243,20 +243,20 @@ Data_Scaled<-Data_PreAnalyse
 # plot3d(FirstRespondTime,LastPacketTime,LastAckTime,main="")
 # detach(Data_PreAnalyse)
 ###########K值选择#############
-#通过计算轮廓系数（silhouette coefficient）方法结合了凝聚度和分离度，可以以此来判断聚类的优良性。其值在-1到+1之间取值，值越大表示聚类效果越好。
-#########计算不同K值的SSE#####
-# system.time(resultSSE<-CalculeSSE(Data_Scaled))
-# 
-# ###########计算Silhouette Coefficient#######
-# system.time(resultSC<-CalculeSC(Data_Scaled))
-# 
-# # 绘制结果
-# plot(resultSSE, type="o", xlab="Number of Cluster", ylab="Sum of Squer Error")
-# 
-# plot(resultSC, type="o", xlab="Number of Cluster", ylab="Silhouette Coefficient")
-# # K=8时值最大，所以聚类效果最佳。
-# rm(resultSSE)
-# rm(resultSC)
+# 通过计算轮廓系数（silhouette coefficient）方法结合了凝聚度和分离度，可以以此来判断聚类的优良性。其值在-1到+1之间取值，值越大表示聚类效果越好。
+########计算不同K值的SSE#####
+system.time(resultSSE<-CalculeSSE(Data_Scaled))
+
+###########计算Silhouette Coefficient#######
+system.time(resultSC<-CalculeSC(Data_Scaled))
+
+# 绘制结果
+plot(resultSSE, type="o", xlab="Number of Cluster", ylab="Sum of Squer Error")
+
+plot(resultSC, type="o", xlab="Number of Cluster", ylab="Silhouette Coefficient")
+# K=8时值最大，所以聚类效果最佳。
+rm(resultSSE)
+rm(resultSC)
 
 ###########聚类############
 #######K-means############
