@@ -133,6 +133,10 @@ ClusterC<-function(data,r=0.5){
 }
 
 system.time(ClusteRes<-ClusterC(Data_Anayse))
+
+# 数据与类结合
+Data_Cluster<-data.frame(Data_Anayse,ClusteRes$cluster)
+
 ClusterCenter<-data.frame(ClusteRes$centers)
 
 # 系统内建距离矩阵函数‘dist’
@@ -179,12 +183,7 @@ toNumeric<-function(data){
 NumMatrix<-toNumeric(Juli)
 names(NumMatrix) <- c("weight","from", "to" )
 
-# 根据距离对NumMatrix排序
 
-SortData<-NumMatrix[order(NumMatrix[,1]),]
-SortData[10000,]
-SortData[11001,]
-SortData[12002,]
 g<-graph.data.frame(NumMatrix[,-1],vertices=c(1:194),directed=F)
 E(g)$weight <- NumMatrix[,1]
 V(g)$size <-1
@@ -220,6 +219,28 @@ typeof(Edge_Distance[,3])
 # 排序
 SortDistance<-Edge_Distance[order(as.numeric(as.character(Edge_Distance[,3])), decreasing = TRUE),]
 
+# 距离最远的C-1条边为
+topRow<-function(data,C){
+  C<-C-1
+  top<-matrix('NA',nrow=C,ncol=3)  
+  for(i in 1:C){
+    top[i,1]<-data[i,1]
+    top[i,2]<-data[i,2]
+    top[i,3]<-as.numeric(as.character(data[i,3]))
+  }
+  return(top)
+}
+
+#删除的点数
+C=10
+BigDistance<-topRow(SortDistance,C)
+
+BigDistance
+
+# topg<-graph.data.frame(BigDistance[,-3],vertices=c(1:194),directed=F)
+# V(topg)$size <- 1
+# plot(topg,main="Deleted row")
+
 # 删除权重最高的C-1项
 DeletRow<-function(data,C){
   C<-C-1
@@ -229,8 +250,14 @@ DeletRow<-function(data,C){
   return(data)
 }
 
-NewDistance<-DeletRow(SortDistance,8)
+NewDistance<-DeletRow(SortDistance,C)
 
 newg<-graph.data.frame(NewDistance[,-3],vertices=c(1:194),directed=F)
 V(newg)$size <- 1
-plot(newg,main="MST2")
+plot(newg,main="MST when deleting the largest distance ")
+
+
+
+
+
+
