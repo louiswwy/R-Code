@@ -275,7 +275,8 @@ data_cluster<-data.frame(data_HTTP,data.frame(kmC$clustering))
 # km3<-kmeans(Data_Scaled,3)
 # data_cluster<-data.frame(data_HTTP,data.frame(km3$cluster))
 attach(data_cluster)
-plot3d(upAvBand,downAvBand,firstRespondTime,size=3,col=kmC$cluster)
+plot3d(upAvBand,downAvBand,firstRespondTime,size=3,col=kmC$cluster) 
+plot3d(firstRespondTime,lastPacketTime,lastAckTime,size=3,col=kmC$cluster)
 detach(data_cluster)
 ###########long procedure############
 # merge data with same xdr id
