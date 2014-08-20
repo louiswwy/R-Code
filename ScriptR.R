@@ -262,19 +262,21 @@ rm(resultSC)
 #######K-means############
 # 使用效果相同但是速度更快的clara算法
 # pkm<-kmeans(Data_Scaled,8,nstart=25,iter.max=10,algorithm="Hartigan-Wong")
-# attach(Data_Scaled)
-# # plot3d(upAvBand,downAvBand,firstRespondTime,size=3,col=pkm$cluster)
+
 # plot(x=Data_PreAnalyseScaled[,2],y=Data_PreAnalyseScaled[,3],col=pkm$cluster,xlim=c(-5,10),ylim=c(-2,10),main="聚5类图",xlab="",ylab="") #,xlim=c(-5,0.5),ylim=c(-5,5)
 # plot(Data_PreAnalyseScaled,col=pkm$cluster)#,xlab="",ylab="",xlim=c(-5,2),ylim=c(-3,6))
-# detach(Data_Scaled)
+
 ###############CLARA (Clustering for Large Applications) algorithm###################
 # It works by clustering a sample from the dataset and then assigns all objects in the dataset to these clusters.
 #需要使用cluster包
-kmC<-clara(Data_Scaled,8)
-kmC$clusinfo
-
+kmC<-clara(Data_Scaled,3)
+# kmC$clusinfo
 data_cluster<-data.frame(data_HTTP,data.frame(kmC$clustering))
-
+# km3<-kmeans(Data_Scaled,3)
+# data_cluster<-data.frame(data_HTTP,data.frame(km3$cluster))
+attach(data_cluster)
+plot3d(upAvBand,downAvBand,firstRespondTime,size=3,col=kmC$cluster)
+detach(data_cluster)
 ###########long procedure############
 # merge data with same xdr id
 # XdrCount<-itemCount(data_HTTP$xDRID)
@@ -343,45 +345,56 @@ par(oldpar)#还原设置
 # 
 # data_cluster<-data.frame(data_cluster,row.names(data_cluster))
 
-data_PreAR<-data_cluster[c(77,78,79,80,81,82,12)]
+data_PreAR<-data_cluster[c(77,78,79,80,81,82)] #,12
 
 str(data_PreAR)
 #根据类划分数据。
 Data_ARule<-split(data_PreAR[1:5],data_PreAR[,6])
 #统计每个类的信息
-summary(data.frame(Data_ARule[1]))
-summary(data.frame(Data_ARule[2]))
-summary(data.frame(Data_ARule[3]))
-summary(data.frame(Data_ARule[4]))
-summary(data.frame(Data_ARule[5]))
-summary(data.frame(Data_ARule[6]))
-summary(data.frame(Data_ARule[7]))
-summary(data.frame(Data_ARule[8]))
+summary(Cluster1<-data.frame(Data_ARule[1]))
+summary(Cluster2<-data.frame(Data_ARule[2]))
+summary(Cluster3<-data.frame(Data_ARule[3]))
+# summary(data.frame(Data_ARule[4]))
+# summary(data.frame(Data_ARule[5]))
+# summary(data.frame(Data_ARule[6]))
+# summary(data.frame(Data_ARule[7]))
+# summary(data.frame(Data_ARule[8]))
 
-# 
+values<-c(nrow(Cluster1), nrow(Cluster2), nrow(Cluster3))
+labels<-c("C1","C2","C3")
+percent_str <- paste(round(values/sum(values) * 100,1), "%", sep="")
+pie(values, labels = percent_str, col=rainbow(3),main="Pie Chart")
+
 # ###关联规则#####
 # 
 #寻找区间
 qujian<-function(data,nk){  
-  TData<-c()
-  for(i in 1:nk){
-    CData<-c()
-    clu<-(data$kmC.clustering==i)
-    datacluste<-data[clu,][,-6]
-    for(n in 1:ncol(datacluste)){
-      minV<-min(datacluste[,n])
-      maxV<-max(datacluste[,n])
-      RData<-rbind(minV,maxV)   
-      CData<-cbind(CData,RData)
-    }
-    TData<-rbind(TData,CData)
+  nR<-nk*2
+  Mat<-matrix('NA',nrow=6,ncol=5)
+  SData<-split(data[1:5],data[,6])
+  
+  a<-data.frame(SData[1])
+  b<-data.frame(SData[2])
+  c<-data.frame(SData[3])
+  #统计每个类的信息
+  for(i in 1:5){
+    Mat[1,i]<-min(a[,i])
+    Mat[2,i]<-max(a[,i])
+
+    Mat[3,i]<-min(b[,i])
+    Mat[4,i]<-max(b[,i])
+    
+    Mat[5,i]<-min(c[,i])
+    Mat[6,i]<-max(c[,i])
   }
-  rowname<-c("1","1","2","2","3","3","4","4","5","5","6","6","7","7","8","8")
-  TData<-cbind(TData,rowname)
-  return(TData)
+  return(Mat)
 }
 
-system.time(Max_Min<-qujian(data_PreAR[1:5],8))
+system.time(Max_Min<-qujian(data_PreAR[1:6],3))
+#data_PreAR[,1]
+#data_PreAR[,3]
+
+
 #优化版
 qujian2<-function(data,nc){  
   TData<-c()
@@ -399,7 +412,7 @@ qujian2<-function(data,nc){
   return(TData)
 }
 
-system.time(Max_Min<-qujian2(Data_ARule,8))
+system.time(Max_Min2<-qujian2(Data_ARule,3))
 
 findSeuil<-function(Data){  
   RowSeuil<-c()
@@ -407,7 +420,7 @@ findSeuil<-function(Data){
   for(x in 1:5){
     ColSeuil<-c()
     data<-sort(as.numeric(Data[,x]))
-    for(y in 1:15){
+    for(y in 1:5){
       seuil<-abs((data[y]-data[y+1])/2)+data[y]
       ColSeuil<-rbind(ColSeuil,seuil)
     }
@@ -445,7 +458,6 @@ arrangeValue<-function(data){
 system.time(Seuil<-arrangeValue(Seuil))
 
 #讲数值转换为区间
-data_AR<-data_PreAR
 
 ToString<-function(data,seuil){  
   for(x in 1:5){
@@ -456,17 +468,17 @@ ToString<-function(data,seuil){
       else if((seuil[2,x]<data[y,x]  && data[y,x]<=seuil[3,x]  && seuil[3,x]!=0)||  (seuil[2,x] <=data[y,x]&&seuil[3,x]==0))  {data[y,x]<-'3'}
       else if((seuil[3,x]<data[y,x]  && data[y,x]<=seuil[4,x]  && seuil[4,x]!=0)||  (seuil[3,x] <=data[y,x]&&seuil[4,x]==0))  {data[y,x]<-'4'}
       else if((seuil[4,x]<data[y,x]  && data[y,x]<=seuil[5,x]  && seuil[5,x]!=0)||  (seuil[4,x] <=data[y,x]&&seuil[5,x]==0))  {data[y,x]<-'5'}
-      else if((seuil[5,x]<data[y,x]  && data[y,x]<=seuil[6,x]  && seuil[6,x]!=0)||  (seuil[5,x] <=data[y,x]&&seuil[6,x]==0))  {data[y,x]<-'6'}
-      else if((seuil[6,x]<data[y,x]  && data[y,x]<=seuil[7,x]  && seuil[7,x]!=0)||  (seuil[6,x] <=data[y,x]&&seuil[7,x]==0))  {data[y,x]<-'7'}
-      else if((seuil[7,x]<data[y,x]  && data[y,x]<=seuil[8,x]  && seuil[8,x]!=0)||  (seuil[7,x] <=data[y,x]&&seuil[8,x]==0))  {data[y,x]<-'8'}
-      else if((seuil[8,x]<data[y,x]  && data[y,x]<=seuil[9,x]  && seuil[9,x]!=0)||  (seuil[8,x] <=data[y,x]&&seuil[9,x]==0))  {data[y,x]<-'9'}
-      else if((seuil[9,x]<data[y,x]  && data[y,x]<=seuil[10,x] && seuil[10,x]!=0)|| (seuil[9,x] <=data[y,x]&&seuil[10,x]==0)) {data[y,x]<-'10'}
-      else if((seuil[10,x]<data[y,x] && data[y,x]<=seuil[11,x] && seuil[11,x]!=0)|| (seuil[10,x]<=data[y,x]&&seuil[11,x]==0)) {data[y,x]<-'11'}
-      else if((seuil[11,x]<data[y,x] && data[y,x]<=seuil[12,x] && seuil[12,x]!=0)|| (seuil[11,x]<=data[y,x]&&seuil[12,x]==0)) {data[y,x]<-'12'}
-      else if((seuil[12,x]<data[y,x] && data[y,x]<=seuil[13,x] && seuil[13,x]!=0)|| (seuil[12,x]<=data[y,x]&&seuil[13,x]==0)) {data[y,x]<-'13'}
-      else if((seuil[13,x]<data[y,x] && data[y,x]<=seuil[14,x] && seuil[14,x]!=0)|| (seuil[13,x]<=data[y,x]&&seuil[14,x]==0)) {data[y,x]<-'14'}
-      else if((seuil[14,x]<data[y,x] && data[y,x]<=seuil[15,x] && seuil[15,x]!=0)|| (seuil[14,x]<=data[y,x]&&seuil[15,x]==0)) {data[y,x]<-'15'}
-      else if(seuil[15,x]<data[y,x] && seuil[15,x]!=0) {data[y,x]<-'16'}
+#       else if((seuil[5,x]<data[y,x]  && data[y,x]<=seuil[6,x]  && seuil[6,x]!=0)||  (seuil[5,x] <=data[y,x]&&seuil[6,x]==0))  {data[y,x]<-'6'}
+#       else if((seuil[6,x]<data[y,x]  && data[y,x]<=seuil[7,x]  && seuil[7,x]!=0)||  (seuil[6,x] <=data[y,x]&&seuil[7,x]==0))  {data[y,x]<-'7'}
+#       else if((seuil[7,x]<data[y,x]  && data[y,x]<=seuil[8,x]  && seuil[8,x]!=0)||  (seuil[7,x] <=data[y,x]&&seuil[8,x]==0))  {data[y,x]<-'8'}
+#       else if((seuil[8,x]<data[y,x]  && data[y,x]<=seuil[9,x]  && seuil[9,x]!=0)||  (seuil[8,x] <=data[y,x]&&seuil[9,x]==0))  {data[y,x]<-'9'}
+#       else if((seuil[9,x]<data[y,x]  && data[y,x]<=seuil[10,x] && seuil[10,x]!=0)|| (seuil[9,x] <=data[y,x]&&seuil[10,x]==0)) {data[y,x]<-'10'}
+#       else if((seuil[10,x]<data[y,x] && data[y,x]<=seuil[11,x] && seuil[11,x]!=0)|| (seuil[10,x]<=data[y,x]&&seuil[11,x]==0)) {data[y,x]<-'11'}
+#       else if((seuil[11,x]<data[y,x] && data[y,x]<=seuil[12,x] && seuil[12,x]!=0)|| (seuil[11,x]<=data[y,x]&&seuil[12,x]==0)) {data[y,x]<-'12'}
+#       else if((seuil[12,x]<data[y,x] && data[y,x]<=seuil[13,x] && seuil[13,x]!=0)|| (seuil[12,x]<=data[y,x]&&seuil[13,x]==0)) {data[y,x]<-'13'}
+#       else if((seuil[13,x]<data[y,x] && data[y,x]<=seuil[14,x] && seuil[14,x]!=0)|| (seuil[13,x]<=data[y,x]&&seuil[14,x]==0)) {data[y,x]<-'14'}
+#       else if((seuil[14,x]<data[y,x] && data[y,x]<=seuil[15,x] && seuil[15,x]!=0)|| (seuil[14,x]<=data[y,x]&&seuil[15,x]==0)) {data[y,x]<-'15'}
+#       else if(seuil[15,x]<data[y,x] && seuil[15,x]!=0) {data[y,x]<-'16'}
       
     }  
   }
@@ -475,8 +487,8 @@ ToString<-function(data,seuil){
 
 system.time(Data_AR<-ToString(data_PreAR[1:5],Seuil))
 
-Data_AR2<-data.frame(Data_AR,data_PreAR[,7])
-names(Data_AR2)<-c('upAvBand','downAvBand','firstRespondTime','lastPacketTime','lastAckTime','item')
+Data_AR2<-data.frame(Data_AR)#,data_PreAR[,7])
+names(Data_AR2)<-c('upAvBand','downAvBand','firstRespondTime','lastPacketTime','lastAckTime')#,'item')
 
 #根据row.names，将eNbCount中的‘Freq’合并到Data_AR中
 # Data_AR2<-cbind(Data_AR2, eNbCount[, "Freq"][match(Data_AR2$eNbIp, eNbCount$item)])
@@ -515,7 +527,7 @@ names(Data_AR2)<-c('upAvBand','downAvBand','firstRespondTime','lastPacketTime','
 # # 一般使用as(object,"type")来做转换。
 # # 而转换为transactions型时需先将数据转换为因子(factor)
 # # 转换前不要忘记载入arules包
-LteCode<-Data_AR2[,-6]
+LteCode<-Data_AR2#[,-6]
 LteCode<-data.frame(
   
   LteCode[,1]<-factor(LteCode[,1]),
