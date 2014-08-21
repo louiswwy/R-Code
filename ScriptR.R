@@ -43,8 +43,8 @@ library(arules)
 #字符串处理
 library("stringr")
 #ff
-library("bit")
-library("ff")
+# library("bit")
+# library("ff")
 #Rweka
 # 需要先配置rjava环境
 # library("rJava")
@@ -545,7 +545,13 @@ names(LteCode)<-c('upAvBand','downAvBand','firstRespondTime','lastPacketTime','l
 system.time(trans<-as(LteCode , "transactions"))
 summary(trans)
 # 以函数apriori中的缺省设置来查找数据集trans中的关联规则
-system.time(aRule<-apriori(trans))
+system.time(aRule<-apriori(trans,parameter = list(minlen=2, supp=0.5, conf=0.8)
+                           , appearance = list(rhs=c("lastAckTime=1", "upAvBand=1")
+                                               , default="lhs"),control = list(verbose=F)))
+summary(aRule)
+if(!is.na((((aRule@lhs)@data)@i[1]))){
+  write(aRule,file="apriori_rules.txt",sep = "|",col.names=NA) 
+}
 # 检查所返回的关联规则
 inspect(aRule)
 # eclat算法
