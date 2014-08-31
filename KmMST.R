@@ -134,8 +134,15 @@ ClusterC<-function(data,r=0.5){
 
 system.time(ClusteRes<-ClusterC(Data_Anayse))
 
+
+
 # 数据与类结合
 Data_Cluster<-data.frame(Data_Anayse,ClusteRes$cluster)
+
+attach(Data_Anayse)
+plot3d(upAvBand,downAvBand,firstRespondTime,size=3,col=ClusteRes$cluster) 
+plot3d(firstRespondTime,lastPacketTime,lastAckTime,size=3,col=ClusteRes$cluster)
+detach(Data_Anayse)
 
 ClusterCenter<-data.frame(ClusteRes$centers)
 
@@ -173,6 +180,8 @@ distMatrix<-function(data){
 
 system.time(Juli<-distMatrix(ClusterCenter))
 
+max(as.numeric(as.character(Juli[,1])))
+min(as.numeric(as.character(Juli[,1])))
 # 由因子转换成数字
 toNumeric<-function(data){
   data[,1]<-round(as.numeric(as.character(data[,1])),4)
@@ -232,7 +241,7 @@ topRow<-function(data,C){
 }
 
 #删除的点数
-C=10
+C=180
 BigDistance<-topRow(SortDistance,C)
 
 BigDistance
@@ -254,7 +263,7 @@ NewDistance<-DeletRow(SortDistance,C)
 
 newg<-graph.data.frame(NewDistance[,-3],vertices=c(1:194),directed=F)
 V(newg)$size <- 1
-plot(newg,main="MST when deleting the largest distance ")
+plot(newg,main="MST when deleting the 180 longest distance ")
 
 
 
